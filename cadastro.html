@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Puericultura - Cadastro</title>
+<style>
+  :root{
+    --azul-noite:#0F3D57;
+    --azul-medio:#1B6E8C;
+    --azul-claro:#5FB8D9;
+    --creme:#F7F9F6;
+    --alerta:#C24B4B;
+    --sucesso:#2E7D5B;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', Roboto, Arial, sans-serif;
+    background:var(--creme);
+    color:var(--azul-noite);
+    min-height:100vh;
+  }
+  header{
+    background:linear-gradient(135deg, var(--azul-noite), var(--azul-medio));
+    color:#fff;
+    padding:22px 20px 26px;
+    text-align:center;
+  }
+  header h1{
+    margin:0;
+    font-size:22px;
+    letter-spacing:.3px;
+  }
+  header p{
+    margin:6px 0 0;
+    font-size:13px;
+    opacity:.85;
+  }
+  main{
+    max-width:480px;
+    margin:0 auto;
+    padding:20px 16px 60px;
+  }
+  .card{
+    background:#fff;
+    border-radius:14px;
+    padding:20px;
+    box-shadow:0 2px 10px rgba(15,61,87,0.08);
+    margin-bottom:16px;
+  }
+  label{
+    display:block;
+    font-size:13px;
+    font-weight:600;
+    margin:14px 0 6px;
+    color:var(--azul-medio);
+  }
+  label.obrigatorio::after{
+    content:" *";
+    color:var(--alerta);
+  }
+  input, textarea{
+    width:100%;
+    padding:11px 12px;
+    border:1.5px solid #DCE6E9;
+    border-radius:8px;
+    font-size:15px;
+    font-family:inherit;
+    color:var(--azul-noite);
+    background:#FDFEFE;
+  }
+  input:focus, textarea:focus{
+    outline:none;
+    border-color:var(--azul-claro);
+  }
+  textarea{ min-height:70px; resize:vertical; }
+  .linha-dupla{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  button{
+    width:100%;
+    margin-top:22px;
+    padding:14px;
+    border:none;
+    border-radius:10px;
+    background:var(--azul-medio);
+    color:#fff;
+    font-size:16px;
+    font-weight:600;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  button:disabled{
+    background:#9FB9C4;
+    cursor:not-allowed;
+  }
+  button:not(:disabled):hover{ background:var(--azul-noite); }
+  .aviso{
+    margin-top:16px;
+    padding:12px 14px;
+    border-radius:9px;
+    font-size:14px;
+    display:none;
+  }
+  .aviso.sucesso{
+    display:block;
+    background:#E4F3EC;
+    color:var(--sucesso);
+    border:1px solid #BFE3D0;
+  }
+  .aviso.erro{
+    display:block;
+    background:#FBEAEA;
+    color:var(--alerta);
+    border:1px solid #F1C6C6;
+  }
+  .id-gerado{
+    font-weight:700;
+    font-size:16px;
+  }
+  footer{
+    text-align:center;
+    font-size:12px;
+    color:#7C97A2;
+    padding-bottom:20px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Puericultura</h1>
+  <p>ESF Flor do Cerrado - Cadastro de criança</p>
+</header>
+
+<main>
+  <div class="card">
+    <form id="formCadastro">
+
+      <label class="obrigatorio">Nome da criança</label>
+      <input type="text" id="nome" required>
+
+      <div class="linha-dupla">
+        <div>
+          <label class="obrigatorio">Data de nascimento</label>
+          <input type="date" id="dataNascimento" required>
+        </div>
+        <div>
+          <label>Consultas já feitas antes</label>
+          <input type="number" id="consultasJaRealizadas" min="0" max="9" value="0">
+        </div>
+      </div>
+
+      <label>Nome do responsável</label>
+      <input type="text" id="nomeResponsavel">
+
+      <div class="linha-dupla">
+        <div>
+          <label>CNS da criança</label>
+          <input type="text" id="cns" inputmode="numeric">
+        </div>
+        <div>
+          <label>Telefone</label>
+          <input type="tel" id="telefone" placeholder="(65) 90000-0000">
+        </div>
+      </div>
+
+      <div class="linha-dupla">
+        <div>
+          <label>Microárea</label>
+          <input type="text" id="microarea" list="lista-microareas" autocomplete="off">
+          <datalist id="lista-microareas"></datalist>
+        </div>
+        <div>
+          <label>ACS</label>
+          <input type="text" id="acs" list="lista-acs" autocomplete="off">
+          <datalist id="lista-acs"></datalist>
+        </div>
+      </div>
+
+      <label>Observações</label>
+      <textarea id="observacoes"></textarea>
+
+      <button type="submit" id="btnSalvar">Cadastrar criança</button>
+
+      <div id="aviso" class="aviso"></div>
+    </form>
+  </div>
+</main>
+
+<footer>antonioresolve.com.br</footer>
+
+<script>
+  // ATENÇÃO: cole aqui a URL /exec da implantação do Apps Script (PUERICULTURA_FC)
+  const API_URL = "https://script.google.com/macros/s/AKfycbz9G6wxwGqE4KGuZnVRJSXitb9st3sHh0OlY5JjRL4D-pHzTiy5oG7phukqqBRaDK98UQ/exec";
+  const API_KEY = "FC_PUERI2026";
+
+  const form = document.getElementById('formCadastro');
+  const btn = document.getElementById('btnSalvar');
+  const aviso = document.getElementById('aviso');
+  const campoMicroarea = document.getElementById('microarea');
+  const campoAcs = document.getElementById('acs');
+
+  let listaAcsMicroarea = [];
+
+  async function carregarAcsMicroarea() {
+    try {
+      const url = API_URL + "?action=listarAcsMicroarea&apiKey=" + encodeURIComponent(API_KEY);
+      const resposta = await fetch(url);
+      const resultado = await resposta.json();
+      if (resultado.ok) {
+        listaAcsMicroarea = resultado.lista;
+
+        const datalistMicro = document.getElementById('lista-microareas');
+        const datalistAcs = document.getElementById('lista-acs');
+        datalistMicro.innerHTML = '';
+        datalistAcs.innerHTML = '';
+
+        const microareasUnicas = [...new Set(listaAcsMicroarea.map(i => i.microarea))];
+        const acsUnicos = [...new Set(listaAcsMicroarea.map(i => i.acs))];
+
+        microareasUnicas.forEach(m => {
+          const opt = document.createElement('option');
+          opt.value = m;
+          datalistMicro.appendChild(opt);
+        });
+        acsUnicos.forEach(a => {
+          const opt = document.createElement('option');
+          opt.value = a;
+          datalistAcs.appendChild(opt);
+        });
+      }
+    } catch (err) {
+      console.error('Falha ao carregar lista ACS/Microárea:', err);
+    }
+  }
+
+  campoMicroarea.addEventListener('input', function () {
+    const valor = campoMicroarea.value.trim().toLowerCase();
+    const encontrado = listaAcsMicroarea.find(i => i.microarea.toLowerCase() === valor);
+    if (encontrado) campoAcs.value = encontrado.acs;
+  });
+
+  campoAcs.addEventListener('input', function () {
+    const valor = campoAcs.value.trim().toLowerCase();
+    const encontrado = listaAcsMicroarea.find(i => i.acs.toLowerCase() === valor);
+    if (encontrado) campoMicroarea.value = encontrado.microarea;
+  });
+
+  carregarAcsMicroarea();
+
+  form.addEventListener('submit', async function(e){
+    e.preventDefault();
+
+    const dados = {
+      nome: document.getElementById('nome').value.trim(),
+      dataNascimento: document.getElementById('dataNascimento').value,
+      nomeResponsavel: document.getElementById('nomeResponsavel').value.trim(),
+      cns: document.getElementById('cns').value.trim(),
+      telefone: document.getElementById('telefone').value.trim(),
+      microarea: document.getElementById('microarea').value.trim(),
+      acs: document.getElementById('acs').value.trim(),
+      consultasJaRealizadas: Number(document.getElementById('consultasJaRealizadas').value) || 0,
+      observacoes: document.getElementById('observacoes').value.trim(),
+    };
+
+    btn.disabled = true;
+    btn.textContent = "Salvando...";
+    aviso.className = "aviso";
+    aviso.textContent = "";
+
+    try {
+      const resposta = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "cadastrarCrianca",
+          apiKey: API_KEY,
+          dados: dados
+        })
+      });
+
+      const resultado = await resposta.json();
+
+      if (resultado.ok) {
+        aviso.className = "aviso sucesso";
+        aviso.innerHTML = "Criança cadastrada com sucesso! ID: <span class='id-gerado'>" + resultado.crianca.idCrianca + "</span>";
+        form.reset();
+      } else {
+        aviso.className = "aviso erro";
+        aviso.textContent = "Erro: " + resultado.erro;
+      }
+    } catch (err) {
+      aviso.className = "aviso erro";
+      aviso.textContent = "Falha de conexão: " + err.message;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Cadastrar criança";
+    }
+  });
+</script>
+
+</body>
+</html>
