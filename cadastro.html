@@ -176,15 +176,15 @@
 <main>
   <div class="card" id="cardImportarCelk">
     <div id="toggleImportar" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
-      <strong style="font-size:14px;color:var(--azul-medio);">📋 Importar do espelho CELK</strong>
+      <strong style="font-size:14px;color:var(--azul-medio);">📄 Importar do espelho CELK (PDF)</strong>
       <span id="setaImportar" style="font-size:12px;color:#5F7A85;">▼ abrir</span>
     </div>
     <div id="areaImportar" style="display:none;margin-top:12px;">
       <p style="font-size:12.5px;color:#5F7A85;margin:0 0 8px;">
-        Abra a ficha do paciente no CELK, selecione todo o texto (Ctrl+A) e copie (Ctrl+C). Cole aqui embaixo — o app tenta preencher nome, data de nascimento, nome da mãe, CNS e telefone automaticamente. Confira os campos antes de salvar.
+        Selecione o PDF da ficha do paciente exportada do CELK. A IA lê o arquivo e preenche nome, data de nascimento, nome da mãe, CNS e telefone automaticamente. Confira os campos antes de salvar.
       </p>
-      <textarea id="textoCelk" placeholder="Cole aqui o texto copiado da ficha do paciente..." style="min-height:110px;"></textarea>
-      <button type="button" id="btnImportarCelk" style="background:var(--azul-claro);margin-top:10px;">Preencher formulário</button>
+      <input type="file" id="arquivoCelk" accept="application/pdf">
+      <button type="button" id="btnImportarCelk" style="background:var(--azul-claro);margin-top:10px;">Ler PDF e preencher</button>
       <div id="avisoImportar" class="aviso"></div>
     </div>
   </div>
@@ -327,11 +327,11 @@
 
   carregarAcsMicroarea();
 
-  // ===================== IMPORTAR DO ESPELHO CELK =====================
+  // ===================== IMPORTAR DO ESPELHO CELK (PDF + IA) =====================
   const toggleImportar = document.getElementById('toggleImportar');
   const areaImportar = document.getElementById('areaImportar');
   const setaImportar = document.getElementById('setaImportar');
-  const textoCelk = document.getElementById('textoCelk');
+  const arquivoCelk = document.getElementById('arquivoCelk');
   const btnImportarCelk = document.getElementById('btnImportarCelk');
   const avisoImportar = document.getElementById('avisoImportar');
 
@@ -341,71 +341,83 @@
     setaImportar.textContent = abrindo ? '▲ fechar' : '▼ abrir';
   });
 
-  function extrairDadosCelk(textoOriginal) {
-    // Normaliza espaços/quebras de linha, já que o texto colado do CELK
-    // (tela ou PDF) pode vir em ordem de leitura diferente da visual.
-    const texto = textoOriginal.replace(/\s+/g, ' ').trim();
-    const dados = {};
-
-    let m = texto.match(/Paciente:\s*([A-ZÀ-Ü\s]+?)\s+(?:Situa[çc][ãa]o:|Sexo:)/i);
-    if (m) dados.nome = m[1].trim();
-
-    m = texto.match(/Data de Nasc\.?:\s*(\d{2})\/(\d{2})\/(\d{4})/i);
-    if (m) dados.dataNascimento = m[3] + '-' + m[2] + '-' + m[1];
-
-    m = texto.match(/Nome da M[ãa]e:\s*([A-ZÀ-Ü\s]+?)\s+(?:Nome do Pai|Telefone|Data Fixa)/i);
-    if (m) dados.nomeResponsavel = m[1].trim();
-
-    // CNS: padrão de 15 dígitos agrupados de 3 em 3 (XXX.XXX.XXX.XXX.XXX)
-    m = texto.match(/(\d{3}\.\d{3}\.\d{3}\.\d{3}\.\d{3})/);
-    if (m) dados.cns = m[1].replace(/\./g, '');
-
-    // Telefone: (XX) XXXXX-XXXX ou (XX) XXXX-XXXX
-    m = texto.match(/\((\d{2})\)\s?(\d{4,5}-\d{4})/);
-    if (m) dados.telefone = '(' + m[1] + ') ' + m[2];
-
-    return dados;
+  function arquivoParaBase64(arquivo) {
+    return new Promise(function (resolve, reject) {
+      const leitor = new FileReader();
+      leitor.onload = function () { resolve(leitor.result.split(',')[1]); };
+      leitor.onerror = reject;
+      leitor.readAsDataURL(arquivo);
+    });
   }
 
-  btnImportarCelk.addEventListener('click', function () {
-    const texto = textoCelk.value.trim();
+  btnImportarCelk.addEventListener('click', async function () {
     avisoImportar.className = 'aviso';
     avisoImportar.textContent = '';
 
-    if (!texto) {
+    const arquivo = arquivoCelk.files[0];
+    if (!arquivo) {
       avisoImportar.className = 'aviso erro';
-      avisoImportar.textContent = 'Cole o texto da ficha antes de preencher.';
+      avisoImportar.textContent = 'Selecione o PDF da ficha antes de continuar.';
       return;
     }
 
-    const dados = extrairDadosCelk(texto);
-    const preenchidos = [];
-    const naoEncontrados = [];
+    btnImportarCelk.disabled = true;
+    btnImportarCelk.textContent = 'Lendo PDF...';
 
-    if (dados.nome) { document.getElementById('nome').value = dados.nome; preenchidos.push('Nome'); }
-    else naoEncontrados.push('Nome');
+    try {
+      const pdfBase64 = await arquivoParaBase64(arquivo);
 
-    if (dados.dataNascimento) { document.getElementById('dataNascimento').value = dados.dataNascimento; preenchidos.push('Data de nascimento'); }
-    else naoEncontrados.push('Data de nascimento');
+      const resposta = await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'extrairDadosPdf',
+          apiKey: API_KEY,
+          dados: { pdfBase64: pdfBase64 }
+        })
+      });
+      const resultado = await resposta.json();
 
-    if (dados.nomeResponsavel) { document.getElementById('nomeResponsavel').value = dados.nomeResponsavel; preenchidos.push('Nome do responsável'); }
-    else naoEncontrados.push('Nome do responsável');
+      if (!resultado.ok) {
+        avisoImportar.className = 'aviso erro';
+        avisoImportar.textContent = 'Erro ao ler o PDF: ' + resultado.erro;
+        return;
+      }
 
-    if (dados.cns) { document.getElementById('cns').value = dados.cns; preenchidos.push('CNS'); }
-    else naoEncontrados.push('CNS');
+      const dados = resultado.dados;
+      const preenchidos = [];
+      const naoEncontrados = [];
 
-    if (dados.telefone) { document.getElementById('telefone').value = dados.telefone; preenchidos.push('Telefone'); }
-    else naoEncontrados.push('Telefone');
+      if (dados.nome) { document.getElementById('nome').value = dados.nome; preenchidos.push('Nome'); }
+      else naoEncontrados.push('Nome');
 
-    if (preenchidos.length === 0) {
+      if (dados.dataNascimento) { document.getElementById('dataNascimento').value = dados.dataNascimento; preenchidos.push('Data de nascimento'); }
+      else naoEncontrados.push('Data de nascimento');
+
+      if (dados.nomeResponsavel) { document.getElementById('nomeResponsavel').value = dados.nomeResponsavel; preenchidos.push('Nome do responsável'); }
+      else naoEncontrados.push('Nome do responsável');
+
+      if (dados.cns) { document.getElementById('cns').value = dados.cns; preenchidos.push('CNS'); }
+      else naoEncontrados.push('CNS');
+
+      if (dados.telefone) { document.getElementById('telefone').value = dados.telefone; preenchidos.push('Telefone'); }
+      else naoEncontrados.push('Telefone');
+
+      if (preenchidos.length === 0) {
+        avisoImportar.className = 'aviso erro';
+        avisoImportar.textContent = 'A IA não conseguiu reconhecer os dados nesse PDF. Confira o arquivo ou preencha manualmente.';
+        return;
+      }
+
+      avisoImportar.className = 'aviso sucesso';
+      avisoImportar.textContent = 'Preenchido: ' + preenchidos.join(', ') + '.' +
+        (naoEncontrados.length ? ' Não encontrado (preencha manualmente): ' + naoEncontrados.join(', ') + '.' : '');
+    } catch (err) {
       avisoImportar.className = 'aviso erro';
-      avisoImportar.textContent = 'Não consegui reconhecer os dados nesse texto. Confira se colou a ficha do paciente completa.';
-      return;
+      avisoImportar.textContent = 'Falha ao processar o PDF: ' + err.message;
+    } finally {
+      btnImportarCelk.disabled = false;
+      btnImportarCelk.textContent = 'Ler PDF e preencher';
     }
-
-    avisoImportar.className = 'aviso sucesso';
-    avisoImportar.textContent = 'Preenchido: ' + preenchidos.join(', ') + '.' +
-      (naoEncontrados.length ? ' Não encontrado (preencha manualmente): ' + naoEncontrados.join(', ') + '.' : '');
   });
 
   form.addEventListener('submit', async function(e){
