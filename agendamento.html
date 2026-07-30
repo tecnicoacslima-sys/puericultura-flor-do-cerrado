@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Puericultura - Agendamento</title>
+<style>
+  :root{
+    --azul-noite:#0F3D57;
+    --azul-medio:#1B6E8C;
+    --azul-claro:#5FB8D9;
+    --creme:#F7F9F6;
+    --alerta:#C24B4B;
+    --aviso:#C98A2C;
+    --sucesso:#2E7D5B;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', Roboto, Arial, sans-serif;
+    background:var(--creme);
+    color:var(--azul-noite);
+    min-height:100vh;
+  }
+  header{
+    background:linear-gradient(135deg, var(--azul-noite), var(--azul-medio));
+    color:#fff;
+    padding:22px 20px 26px;
+    text-align:center;
+  }
+  header h1{ margin:0; font-size:22px; }
+  header p{ margin:6px 0 0; font-size:13px; opacity:.85; }
+  main{
+    max-width:480px;
+    margin:0 auto;
+    padding:20px 16px 60px;
+  }
+  .card{
+    background:#fff;
+    border-radius:14px;
+    padding:20px;
+    box-shadow:0 2px 10px rgba(15,61,87,0.08);
+    margin-bottom:16px;
+  }
+  label{
+    display:block;
+    font-size:13px;
+    font-weight:600;
+    margin:6px 0 6px;
+    color:var(--azul-medio);
+  }
+  input, select{
+    width:100%;
+    padding:11px 12px;
+    border:1.5px solid #DCE6E9;
+    border-radius:8px;
+    font-size:15px;
+    font-family:inherit;
+    color:var(--azul-noite);
+    background:#FDFEFE;
+  }
+  input:focus, select:focus{ outline:none; border-color:var(--azul-claro); }
+  button{
+    width:100%;
+    margin-top:14px;
+    padding:14px;
+    border:none;
+    border-radius:10px;
+    background:var(--azul-medio);
+    color:#fff;
+    font-size:16px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  button.secundario{
+    background:#fff;
+    color:var(--azul-medio);
+    border:1.5px solid var(--azul-medio);
+  }
+  button:disabled{ background:#9FB9C4; cursor:not-allowed; }
+  .resultado-busca{
+    border:1px solid #E3ECEF;
+    border-radius:10px;
+    padding:12px;
+    margin-top:8px;
+    cursor:pointer;
+    transition:background .15s;
+  }
+  .resultado-busca:hover{ background:#F1F7F9; }
+  .resultado-busca strong{ display:block; font-size:15px; }
+  .resultado-busca span{ font-size:12px; color:#5F7A85; }
+  .crianca-selecionada{
+    background:#EAF4F7;
+    border-radius:10px;
+    padding:14px;
+    margin-bottom:10px;
+  }
+  .crianca-selecionada strong{ font-size:16px; }
+  .crianca-selecionada .trocar{
+    display:inline-block;
+    margin-top:6px;
+    font-size:12px;
+    color:var(--azul-medio);
+    text-decoration:underline;
+    cursor:pointer;
+  }
+  .sugestao{
+    background:#F0F8F3;
+    border:1px solid #CFE8D8;
+    border-radius:10px;
+    padding:14px;
+    margin:14px 0;
+  }
+  .sugestao .linha{
+    display:flex;
+    justify-content:space-between;
+    font-size:14px;
+    margin:4px 0;
+  }
+  .sugestao .linha b{ color:var(--azul-noite); }
+  .aviso-caixa{
+    background:#FDF3E3;
+    border:1px solid #F1D9A6;
+    color:var(--aviso);
+    border-radius:8px;
+    padding:10px 12px;
+    font-size:13px;
+    margin-top:10px;
+  }
+  .meta-caixa{
+    background:#E4F3EC;
+    border:1px solid #BFE3D0;
+    color:var(--sucesso);
+    border-radius:8px;
+    padding:10px 12px;
+    font-size:13px;
+  }
+  .aviso{
+    margin-top:14px;
+    padding:12px 14px;
+    border-radius:9px;
+    font-size:14px;
+    display:none;
+  }
+  .aviso.sucesso{ display:block; background:#E4F3EC; color:var(--sucesso); border:1px solid #BFE3D0; }
+  .aviso.erro{ display:block; background:#FBEAEA; color:var(--alerta); border:1px solid #F1C6C6; }
+  footer{ text-align:center; font-size:12px; color:#7C97A2; padding-bottom:20px; }
+  .oculto{ display:none; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Puericultura</h1>
+  <p>ESF Flor do Cerrado - Agendamento</p>
+</header>
+
+<main>
+
+  <div class="card" id="cardBusca">
+    <label>Buscar criança (nome, ID ou CNS)</label>
+    <input type="text" id="campoBusca" placeholder="Digite pelo menos 3 letras...">
+    <div id="resultados"></div>
+  </div>
+
+  <div class="card oculto" id="cardCrianca">
+    <div class="crianca-selecionada">
+      <strong id="nomeCrianca"></strong>
+      <div id="infoCrianca" style="font-size:13px;color:#5F7A85;margin-top:4px;"></div>
+      <span class="trocar" id="btnTrocar">Trocar criança</span>
+    </div>
+
+    <div id="areaSugestao"></div>
+
+    <form id="formAgendar" class="oculto">
+      <label>Data da consulta</label>
+      <input type="date" id="dataConsulta" required>
+
+      <label>Profissional</label>
+      <select id="profissional" required>
+        <option value="Enfermeira">Enfermeira</option>
+        <option value="Medica">Médica</option>
+      </select>
+
+      <label>Tipo de atendimento</label>
+      <select id="tipoAtendimento">
+        <option value="Consulta">Consulta</option>
+        <option value="Visita Domiciliar Compartilhada">Visita Domiciliar Compartilhada</option>
+        <option value="Avulso">Avulso</option>
+      </select>
+
+      <button type="submit" id="btnAgendar">Confirmar agendamento</button>
+      <div id="aviso" class="aviso"></div>
+    </form>
+  </div>
+
+</main>
+
+<footer>antonioresolve.com.br</footer>
+
+<script>
+  const API_URL = "https://script.google.com/macros/s/AKfycbz9G6wxwGqE4KGuZnVRJSXitb9st3sHh0OlY5JjRL4D-pHzTiy5oG7phukqqBRaDK98UQ/exec";
+  const API_KEY = "FC_PUERI2026";
+
+  const campoBusca = document.getElementById('campoBusca');
+  const resultadosDiv = document.getElementById('resultados');
+  const cardBusca = document.getElementById('cardBusca');
+  const cardCrianca = document.getElementById('cardCrianca');
+  const nomeCriancaEl = document.getElementById('nomeCrianca');
+  const infoCriancaEl = document.getElementById('infoCrianca');
+  const areaSugestao = document.getElementById('areaSugestao');
+  const formAgendar = document.getElementById('formAgendar');
+  const btnTrocar = document.getElementById('btnTrocar');
+  const aviso = document.getElementById('aviso');
+
+  let criancaAtual = null;
+  let timeoutBusca = null;
+
+  campoBusca.addEventListener('input', function () {
+    clearTimeout(timeoutBusca);
+    const termo = campoBusca.value.trim();
+    if (termo.length < 3) { resultadosDiv.innerHTML = ''; return; }
+    timeoutBusca = setTimeout(function () { buscarCriancas(termo); }, 350);
+  });
+
+  async function buscarCriancas(termo) {
+    resultadosDiv.innerHTML = '<p style="font-size:13px;color:#5F7A85;">Buscando...</p>';
+    try {
+      const url = API_URL + "?action=buscarCrianca&apiKey=" + encodeURIComponent(API_KEY) + "&termo=" + encodeURIComponent(termo);
+      const resposta = await fetch(url);
+      const resultado = await resposta.json();
+
+      if (!resultado.ok || resultado.resultados.length === 0) {
+        resultadosDiv.innerHTML = '<p style="font-size:13px;color:#5F7A85;">Nenhuma criança encontrada.</p>';
+        return;
+      }
+
+      resultadosDiv.innerHTML = '';
+      resultado.resultados.forEach(function (c) {
+        const div = document.createElement('div');
+        div.className = 'resultado-busca';
+        div.innerHTML = '<strong>' + c.nome + '</strong><span>' + c.idCrianca + ' - Nasc: ' + formatarDataBR(c.dataNascimento) + '</span>';
+        div.addEventListener('click', function () { selecionarCrianca(c); });
+        resultadosDiv.appendChild(div);
+      });
+    } catch (err) {
+      resultadosDiv.innerHTML = '<p style="font-size:13px;color:var(--alerta);">Erro na busca: ' + err.message + '</p>';
+    }
+  }
+
+  function selecionarCrianca(c) {
+    criancaAtual = c;
+    nomeCriancaEl.textContent = c.nome;
+    infoCriancaEl.textContent = c.idCrianca + ' • Nasc: ' + formatarDataBR(c.dataNascimento) + (c.acs ? ' • ACS: ' + c.acs : '');
+    cardBusca.classList.add('oculto');
+    cardCrianca.classList.remove('oculto');
+    campoBusca.value = '';
+    resultadosDiv.innerHTML = '';
+    carregarSugestao(c.idCrianca);
+  }
+
+  btnTrocar.addEventListener('click', function () {
+    criancaAtual = null;
+    cardCrianca.classList.add('oculto');
+    cardBusca.classList.remove('oculto');
+    formAgendar.classList.add('oculto');
+    areaSugestao.innerHTML = '';
+    aviso.className = 'aviso';
+  });
+
+  async function carregarSugestao(idCrianca) {
+    areaSugestao.innerHTML = '<p style="font-size:13px;color:#5F7A85;">Calculando sugestão...</p>';
+    formAgendar.classList.add('oculto');
+    try {
+      const url = API_URL + "?action=sugerirProximaConsulta&apiKey=" + encodeURIComponent(API_KEY) + "&idCrianca=" + encodeURIComponent(idCrianca);
+      const resposta = await fetch(url);
+      const resultado = await resposta.json();
+
+      if (!resultado.ok) {
+        areaSugestao.innerHTML = '<div class="aviso erro" style="display:block;">Erro: ' + resultado.erro + '</div>';
+        return;
+      }
+
+      const s = resultado.sugestao;
+
+      if (s.metaAtingida) {
+        areaSugestao.innerHTML = '<div class="meta-caixa">✅ Meta de 9 consultas já atingida (' + s.consultasRealizadas + '/9). Nenhum agendamento necessário.</div>';
+        return;
+      }
+
+      let html = '<div class="sugestao">';
+      html += '<div class="linha"><span>Idade atual</span><b>' + s.idadeAtualMeses + ' meses</b></div>';
+      html += '<div class="linha"><span>Consultas realizadas</span><b>' + s.consultasRealizadas + '/9</b></div>';
+      html += '<div class="linha"><span>Data sugerida</span><b>' + formatarDataBR(s.dataSugerida) + '</b></div>';
+      html += '<div class="linha"><span>Profissional sugerido</span><b>' + s.profissionalSugerido + '</b></div>';
+      html += '</div>';
+
+      if (s.metaEmRisco) {
+        html += '<div class="aviso-caixa">⚠️ ' + s.mensagem + '</div>';
+      } else if (s.intervaloApertado) {
+        html += '<div class="aviso-caixa">⚠️ ' + s.avisoIntervaloApertado + '</div>';
+      }
+
+      areaSugestao.innerHTML = html;
+
+      document.getElementById('dataConsulta').value = s.dataSugerida;
+      document.getElementById('profissional').value = s.profissionalSugerido;
+      formAgendar.classList.remove('oculto');
+    } catch (err) {
+      areaSugestao.innerHTML = '<div class="aviso erro" style="display:block;">Falha ao calcular sugestão: ' + err.message + '</div>';
+    }
+  }
+
+  formAgendar.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnAgendar');
+    btn.disabled = true;
+    btn.textContent = 'Salvando...';
+    aviso.className = 'aviso';
+
+    try {
+      const resposta = await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'agendarConsulta',
+          apiKey: API_KEY,
+          dados: {
+            idCrianca: criancaAtual.idCrianca,
+            dataAtendimento: document.getElementById('dataConsulta').value,
+            profissional: document.getElementById('profissional').value,
+            tipoAtendimento: document.getElementById('tipoAtendimento').value,
+          }
+        })
+      });
+      const resultado = await resposta.json();
+
+      if (resultado.ok) {
+        aviso.className = 'aviso sucesso';
+        aviso.textContent = 'Consulta agendada! ID: ' + resultado.atendimento.idAtendimento;
+      } else {
+        aviso.className = 'aviso erro';
+        aviso.textContent = 'Erro: ' + resultado.erro;
+      }
+    } catch (err) {
+      aviso.className = 'aviso erro';
+      aviso.textContent = 'Falha de conexão: ' + err.message;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Confirmar agendamento';
+    }
+  });
+
+  function formatarDataBR(iso) {
+    if (!iso) return '';
+    const partes = iso.split('-');
+    if (partes.length !== 3) return iso;
+    return partes[2] + '/' + partes[1] + '/' + partes[0];
+  }
+</script>
+
+</body>
+</html>
