@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Puericultura - Vacinas e Visitas ACS</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0F3D57">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>
   :root{
     --azul-noite:#0F3D57;
@@ -236,6 +240,14 @@
 <footer>antonioresolve.com.br</footer>
 
 <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function (err) {
+        console.error('Falha ao registrar service worker:', err);
+      });
+    });
+  }
+
   (function marcarPaginaAtiva() {
     var pagina = window.location.pathname.split('/').pop().replace('.html', '') || 'cadastro';
     document.querySelectorAll('nav.menu-app a').forEach(function (a) {
