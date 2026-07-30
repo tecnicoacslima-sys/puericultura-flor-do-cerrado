@@ -77,11 +77,67 @@
     padding:8px 4px;
     font-size:11px;
     font-weight:700;
+    cursor:pointer;
+    transition:transform .1s;
   }
+  .indicador:active{ transform:scale(0.96); }
   .indicador .letra{ display:block; font-size:14px; }
   .ind-ok{ background:#E4F3EC; color:var(--sucesso); }
   .ind-nok{ background:#FBEAEA; color:var(--alerta); }
   .ind-na{ background:#F0F0F0; color:#8A9AA1; }
+
+  .overlay-modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(15,61,87,0.45);
+    z-index:50;
+    align-items:flex-end;
+    justify-content:center;
+  }
+  .overlay-modal.aberto{ display:flex; }
+  .modal-indicador{
+    background:#fff;
+    border-radius:16px 16px 0 0;
+    padding:22px 20px 28px;
+    max-width:480px;
+    width:100%;
+    box-shadow:0 -4px 20px rgba(15,61,87,0.2);
+  }
+  .modal-indicador .cabecalho{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+  }
+  .modal-indicador .badge-letra{
+    width:32px; height:32px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700;
+    font-size:16px;
+  }
+  .modal-indicador h3{ margin:0; font-size:16px; color:var(--azul-noite); }
+  .modal-indicador p{ margin:0 0 6px; font-size:14px; color:#3E5964; line-height:1.5; }
+  .modal-indicador .status-atual{
+    font-size:13px;
+    font-weight:600;
+    margin-top:10px;
+    padding:8px 10px;
+    border-radius:8px;
+  }
+  .modal-indicador button{
+    width:100%;
+    margin-top:16px;
+    padding:12px;
+    border:none;
+    border-radius:10px;
+    background:var(--azul-medio);
+    color:#fff;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+  }
 
   .resumo-geral{
     display:grid;
@@ -159,11 +215,81 @@
 
 </main>
 
+<div class="overlay-modal" id="overlayModal">
+  <div class="modal-indicador">
+    <div class="cabecalho">
+      <div class="badge-letra" id="modalBadge"></div>
+      <h3 id="modalTitulo"></h3>
+    </div>
+    <p id="modalDescricao"></p>
+    <div class="status-atual" id="modalStatus"></div>
+    <button id="btnFecharModal">Fechar</button>
+  </div>
+</div>
+
 <footer>antonioresolve.com.br</footer>
 
 <script>
   const API_URL = "https://script.google.com/macros/s/AKfycbz9G6wxwGqE4KGuZnVRJSXitb9st3sHh0OlY5JjRL4D-pHzTiy5oG7phukqqBRaDK98UQ/exec";
   const API_KEY = "FC_PUERI2026";
+
+  const DESCRICOES_INDICADOR = {
+    A: {
+      titulo: 'A - 1ª consulta até 30 dias',
+      descricao: 'A criança deve ter a primeira consulta presencial de puericultura registrada até completar 30 dias de vida. Quando ela chega ao município já com mais de 30 dias (sem acompanhamento prévio), esse indicador é marcado como N/A (não aplicável).',
+    },
+    B: {
+      titulo: 'B - 9 consultas até 24 meses',
+      descricao: 'São necessárias 9 consultas de puericultura desde o nascimento até a criança completar 24 meses, sempre alternando entre médica e enfermeira. Consultas já feitas antes do cadastro (ex: criança vinda de outra cidade) também contam.',
+    },
+    C: {
+      titulo: 'C - 9 registros de peso e altura',
+      descricao: 'A cada consulta com comparecimento confirmado, peso e altura devem ser registrados. A meta é ter 9 registros completos de peso e altura ao longo do acompanhamento.',
+    },
+    D: {
+      titulo: 'D - 2 visitas de ACS',
+      descricao: 'O agente comunitário de saúde deve realizar 2 visitas domiciliares: a 1ª até 30 dias de vida da criança, e a 2ª até 6 meses de vida.',
+    },
+    E: {
+      titulo: 'E - Vacinas em dia',
+      descricao: 'A criança deve estar com as vacinas do calendário básico em dia: difteria, tétano, coqueluche, hepatite B, poliomielite, sarampo, caxumba, rubéola e meningite C (9 vacinas ao todo).',
+    },
+  };
+
+  function abrirModalIndicador(letra, indicador, nomeCrianca) {
+    const info = DESCRICOES_INDICADOR[letra];
+    document.getElementById('modalBadge').textContent = letra;
+    document.getElementById('modalTitulo').textContent = info.titulo;
+    document.getElementById('modalDescricao').textContent = info.descricao;
+
+    const badge = document.getElementById('modalBadge');
+    const statusEl = document.getElementById('modalStatus');
+    let classeCor, textoStatus;
+
+    if (letra === 'A' && !indicador.aplicavel) {
+      classeCor = 'ind-na';
+      textoStatus = (nomeCrianca ? nomeCrianca + ': ' : '') + 'Não aplicável (criança chegou com mais de 30 dias).';
+    } else if (indicador.atingido) {
+      classeCor = 'ind-ok';
+      textoStatus = (nomeCrianca ? nomeCrianca + ': ' : '') + 'Meta atingida' + (indicador.meta ? ' (' + indicador.realizado + '/' + indicador.meta + ')' : '') + '.';
+    } else {
+      classeCor = 'ind-nok';
+      textoStatus = (nomeCrianca ? nomeCrianca + ': ' : '') + 'Ainda pendente' + (indicador.meta ? ' (' + indicador.realizado + '/' + indicador.meta + ')' : '') + '.';
+    }
+
+    badge.className = 'badge-letra ' + classeCor;
+    statusEl.className = 'status-atual ' + classeCor;
+    statusEl.textContent = textoStatus;
+
+    document.getElementById('overlayModal').classList.add('aberto');
+  }
+
+  document.getElementById('btnFecharModal').addEventListener('click', function () {
+    document.getElementById('overlayModal').classList.remove('aberto');
+  });
+  document.getElementById('overlayModal').addEventListener('click', function (e) {
+    if (e.target === this) this.classList.remove('aberto');
+  });
 
   // ---------- Abas ----------
   document.querySelectorAll('.aba').forEach(function (aba) {
@@ -255,20 +381,27 @@
     html += '<strong>' + c.nome + '</strong>';
     html += '<div class="sub">' + c.idCrianca + (c.acs ? ' • ACS: ' + c.acs : '') + '</div>';
     html += '<div class="indicadores">';
-    html += indicadorBox('A', c.indicadorA);
-    html += indicadorBox('B', c.indicadorB, c.indicadorB.realizado + '/' + c.indicadorB.meta);
-    html += indicadorBox('C', c.indicadorC, c.indicadorC.realizado + '/' + c.indicadorC.meta);
-    html += indicadorBox('D', c.indicadorD, c.indicadorD.realizado + '/' + c.indicadorD.meta);
-    html += indicadorBox('E', c.indicadorE, c.indicadorE.realizado + '/' + c.indicadorE.meta);
+    html += indicadorBox('A', c.indicadorA, null, c);
+    html += indicadorBox('B', c.indicadorB, c.indicadorB.realizado + '/' + c.indicadorB.meta, c);
+    html += indicadorBox('C', c.indicadorC, c.indicadorC.realizado + '/' + c.indicadorC.meta, c);
+    html += indicadorBox('D', c.indicadorD, c.indicadorD.realizado + '/' + c.indicadorD.meta, c);
+    html += indicadorBox('E', c.indicadorE, c.indicadorE.realizado + '/' + c.indicadorE.meta, c);
     html += '</div></div>';
     return html;
   }
 
-  function indicadorBox(letra, indicador, detalhe) {
+  window.dadosCriancasPorIndicador = window.dadosCriancasPorIndicador || {};
+  let contadorIndicador = 0;
+
+  function indicadorBox(letra, indicador, detalhe, crianca) {
     let classe = indicador.atingido ? 'ind-ok' : 'ind-nok';
     if (letra === 'A' && !indicador.aplicavel) classe = 'ind-na';
     const texto = (letra === 'A' && !indicador.aplicavel) ? 'N/A' : (detalhe || (indicador.atingido ? 'OK' : 'Pendente'));
-    return '<div class="indicador ' + classe + '"><span class="letra">' + letra + '</span>' + texto + '</div>';
+
+    const chave = 'ind_' + (contadorIndicador++);
+    window.dadosCriancasPorIndicador[chave] = { letra: letra, indicador: indicador, nome: crianca ? crianca.nome : null };
+
+    return '<div class="indicador ' + classe + '" onclick="abrirModalIndicador(window.dadosCriancasPorIndicador[\'' + chave + '\'].letra, window.dadosCriancasPorIndicador[\'' + chave + '\'].indicador, window.dadosCriancasPorIndicador[\'' + chave + '\'].nome)"><span class="letra">' + letra + '</span>' + texto + '</div>';
   }
 
   // ---------- Por criança (busca individual) ----------
