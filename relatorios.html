@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Puericultura - Relatórios</title>
+<style>
+  :root{
+    --azul-noite:#0F3D57;
+    --azul-medio:#1B6E8C;
+    --azul-claro:#5FB8D9;
+    --creme:#F7F9F6;
+    --alerta:#C24B4B;
+    --sucesso:#2E7D5B;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', Roboto, Arial, sans-serif;
+    background:var(--creme);
+    color:var(--azul-noite);
+    min-height:100vh;
+  }
+  header{
+    background:linear-gradient(135deg, var(--azul-noite), var(--azul-medio));
+    color:#fff;
+    padding:22px 20px 26px;
+    text-align:center;
+  }
+  header h1{ margin:0; font-size:22px; }
+  header p{ margin:6px 0 0; font-size:13px; opacity:.85; }
+  main{ max-width:720px; margin:0 auto; padding:16px 16px 60px; }
+
+  .abas{ display:flex; gap:6px; margin-bottom:14px; }
+  .aba{
+    flex:1;
+    text-align:center;
+    padding:10px 6px;
+    border-radius:9px;
+    background:#fff;
+    color:var(--azul-medio);
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    border:1.5px solid #DCE6E9;
+  }
+  .aba.ativa{ background:var(--azul-medio); color:#fff; border-color:var(--azul-medio); }
+
+  .painel{ display:none; }
+  .painel.ativo{ display:block; }
+
+  .card{
+    background:#fff;
+    border-radius:14px;
+    padding:16px;
+    box-shadow:0 2px 10px rgba(15,61,87,0.08);
+    margin-bottom:12px;
+  }
+  select, input{
+    width:100%;
+    padding:10px 12px;
+    border:1.5px solid #DCE6E9;
+    border-radius:8px;
+    font-size:14px;
+    font-family:inherit;
+    color:var(--azul-noite);
+    background:#FDFEFE;
+  }
+  .filtro{ margin-bottom:12px; }
+
+  .criança-card strong{ font-size:15px; display:block; }
+  .criança-card .sub{ font-size:12px; color:#5F7A85; margin-bottom:8px; }
+  .indicadores{ display:grid; grid-template-columns:repeat(5, 1fr); gap:6px; margin-top:6px; }
+  .indicador{
+    text-align:center;
+    border-radius:8px;
+    padding:8px 4px;
+    font-size:11px;
+    font-weight:700;
+  }
+  .indicador .letra{ display:block; font-size:14px; }
+  .ind-ok{ background:#E4F3EC; color:var(--sucesso); }
+  .ind-nok{ background:#FBEAEA; color:var(--alerta); }
+  .ind-na{ background:#F0F0F0; color:#8A9AA1; }
+
+  .resumo-geral{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .resumo-item{
+    background:#fff;
+    border-radius:10px;
+    padding:12px;
+    text-align:center;
+    box-shadow:0 2px 8px rgba(15,61,87,0.06);
+  }
+  .resumo-item .numero{ font-size:22px; font-weight:700; color:var(--azul-noite); }
+  .resumo-item .rotulo{ font-size:11px; color:#5F7A85; }
+
+  .grupo-acs{ margin-bottom:16px; }
+  .grupo-acs h3{ font-size:14px; color:var(--azul-medio); margin:0 0 8px; }
+
+  .falta-item{
+    background:#fff;
+    border-radius:10px;
+    padding:12px;
+    margin-bottom:8px;
+    box-shadow:0 2px 8px rgba(15,61,87,0.06);
+    border-left:4px solid var(--alerta);
+  }
+  .falta-item strong{ font-size:14px; display:block; }
+  .falta-item .sub{ font-size:12px; color:#5F7A85; margin-top:2px; }
+
+  .carregando{ font-size:13px; color:#5F7A85; text-align:center; padding:20px; }
+  .vazio{ font-size:13px; color:#5F7A85; text-align:center; padding:20px; }
+
+  footer{ text-align:center; font-size:12px; color:#7C97A2; padding-bottom:20px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Puericultura</h1>
+  <p>ESF Flor do Cerrado - Relatórios</p>
+</header>
+
+<main>
+
+  <div class="abas">
+    <div class="aba ativa" data-aba="geral">Geral / Por ACS</div>
+    <div class="aba" data-aba="crianca">Por criança</div>
+    <div class="aba" data-aba="faltas">Faltas (busca ativa)</div>
+  </div>
+
+  <!-- PAINEL GERAL / POR ACS -->
+  <div class="painel ativo" id="painelGeral">
+    <div class="filtro">
+      <select id="filtroAcs">
+        <option value="">Todas as ACS</option>
+      </select>
+    </div>
+    <div id="conteudoGeral" class="carregando">Carregando relatório...</div>
+  </div>
+
+  <!-- PAINEL POR CRIANÇA -->
+  <div class="painel" id="painelCrianca">
+    <div class="filtro">
+      <input type="text" id="buscaCriancaRelatorio" placeholder="Buscar por nome, ID ou CNS...">
+    </div>
+    <div id="conteudoCrianca" class="vazio">Digite pelo menos 3 letras para buscar.</div>
+  </div>
+
+  <!-- PAINEL FALTAS -->
+  <div class="painel" id="painelFaltas">
+    <div id="conteudoFaltas" class="carregando">Carregando faltas...</div>
+  </div>
+
+</main>
+
+<footer>antonioresolve.com.br</footer>
+
+<script>
+  const API_URL = "https://script.google.com/macros/s/AKfycbz9G6wxwGqE4KGuZnVRJSXitb9st3sHh0OlY5JjRL4D-pHzTiy5oG7phukqqBRaDK98UQ/exec";
+  const API_KEY = "FC_PUERI2026";
+
+  // ---------- Abas ----------
+  document.querySelectorAll('.aba').forEach(function (aba) {
+    aba.addEventListener('click', function () {
+      document.querySelectorAll('.aba').forEach(function (a) { a.classList.remove('ativa'); });
+      document.querySelectorAll('.painel').forEach(function (p) { p.classList.remove('ativo'); });
+      aba.classList.add('ativa');
+      const alvo = aba.getAttribute('data-aba');
+      document.getElementById('painel' + alvo.charAt(0).toUpperCase() + alvo.slice(1)).classList.add('ativo');
+    });
+  });
+
+  // ---------- Geral / Por ACS ----------
+  let relatorioGeralCache = [];
+
+  async function carregarRelatorioGeral() {
+    const container = document.getElementById('conteudoGeral');
+    container.innerHTML = '<div class="carregando">Carregando relatório...</div>';
+    try {
+      const url = API_URL + "?action=relatorioGeral&apiKey=" + encodeURIComponent(API_KEY);
+      const resposta = await fetch(url);
+      const resultado = await resposta.json();
+      if (!resultado.ok) { container.innerHTML = '<div class="vazio">Erro: ' + resultado.erro + '</div>'; return; }
+
+      relatorioGeralCache = resultado.relatorio;
+      montarFiltroAcs(relatorioGeralCache);
+      renderizarRelatorioGeral(relatorioGeralCache);
+    } catch (err) {
+      container.innerHTML = '<div class="vazio">Falha: ' + err.message + '</div>';
+    }
+  }
+
+  function montarFiltroAcs(lista) {
+    const select = document.getElementById('filtroAcs');
+    const acsUnicas = [...new Set(lista.map(function (c) { return c.acs; }).filter(Boolean))].sort();
+    const valorAtual = select.value;
+    select.innerHTML = '<option value="">Todas as ACS</option>';
+    acsUnicas.forEach(function (acs) {
+      const opt = document.createElement('option');
+      opt.value = acs;
+      opt.textContent = acs;
+      select.appendChild(opt);
+    });
+    select.value = valorAtual;
+  }
+
+  document.getElementById('filtroAcs').addEventListener('change', function () {
+    const filtro = this.value;
+    const filtrado = filtro ? relatorioGeralCache.filter(function (c) { return c.acs === filtro; }) : relatorioGeralCache;
+    renderizarRelatorioGeral(filtrado);
+  });
+
+  function renderizarRelatorioGeral(lista) {
+    const container = document.getElementById('conteudoGeral');
+    if (lista.length === 0) { container.innerHTML = '<div class="vazio">Nenhuma criança encontrada.</div>'; return; }
+
+    const total = lista.length;
+    const contar = function (chave) { return lista.filter(function (c) { return c[chave].atingido; }).length; };
+
+    let html = '<div class="resumo-geral">';
+    html += resumoItem(total, 'Crianças ativas');
+    html += resumoItem(contar('indicadorB') + '/' + total, 'Meta B (9 consultas)');
+    html += resumoItem(contar('indicadorC') + '/' + total, 'Meta C (peso/altura)');
+    html += resumoItem(contar('indicadorE') + '/' + total, 'Meta E (vacinas)');
+    html += '</div>';
+
+    const porAcs = {};
+    lista.forEach(function (c) {
+      const chave = c.acs || 'Sem ACS definida';
+      if (!porAcs[chave]) porAcs[chave] = [];
+      porAcs[chave].push(c);
+    });
+
+    Object.keys(porAcs).sort().forEach(function (acs) {
+      html += '<div class="grupo-acs"><h3>' + acs + ' (' + porAcs[acs].length + ' crianças)</h3>';
+      porAcs[acs].forEach(function (c) { html += cardCrianca(c); });
+      html += '</div>';
+    });
+
+    container.innerHTML = html;
+  }
+
+  function resumoItem(numero, rotulo) {
+    return '<div class="resumo-item"><div class="numero">' + numero + '</div><div class="rotulo">' + rotulo + '</div></div>';
+  }
+
+  function cardCrianca(c) {
+    let html = '<div class="card criança-card">';
+    html += '<strong>' + c.nome + '</strong>';
+    html += '<div class="sub">' + c.idCrianca + (c.acs ? ' • ACS: ' + c.acs : '') + '</div>';
+    html += '<div class="indicadores">';
+    html += indicadorBox('A', c.indicadorA);
+    html += indicadorBox('B', c.indicadorB, c.indicadorB.realizado + '/' + c.indicadorB.meta);
+    html += indicadorBox('C', c.indicadorC, c.indicadorC.realizado + '/' + c.indicadorC.meta);
+    html += indicadorBox('D', c.indicadorD, c.indicadorD.realizado + '/' + c.indicadorD.meta);
+    html += indicadorBox('E', c.indicadorE, c.indicadorE.realizado + '/' + c.indicadorE.meta);
+    html += '</div></div>';
+    return html;
+  }
+
+  function indicadorBox(letra, indicador, detalhe) {
+    let classe = indicador.atingido ? 'ind-ok' : 'ind-nok';
+    if (letra === 'A' && !indicador.aplicavel) classe = 'ind-na';
+    const texto = (letra === 'A' && !indicador.aplicavel) ? 'N/A' : (detalhe || (indicador.atingido ? 'OK' : 'Pendente'));
+    return '<div class="indicador ' + classe + '"><span class="letra">' + letra + '</span>' + texto + '</div>';
+  }
+
+  // ---------- Por criança (busca individual) ----------
+  let timeoutBuscaRelatorio = null;
+  document.getElementById('buscaCriancaRelatorio').addEventListener('input', function () {
+    clearTimeout(timeoutBuscaRelatorio);
+    const termo = this.value.trim();
+    const container = document.getElementById('conteudoCrianca');
+    if (termo.length < 3) { container.innerHTML = '<div class="vazio">Digite pelo menos 3 letras para buscar.</div>'; return; }
+    timeoutBuscaRelatorio = setTimeout(function () { buscarParaRelatorio(termo); }, 350);
+  });
+
+  async function buscarParaRelatorio(termo) {
+    const container = document.getElementById('conteudoCrianca');
+    container.innerHTML = '<div class="carregando">Buscando...</div>';
+    try {
+      const url = API_URL + "?action=buscarCrianca&apiKey=" + encodeURIComponent(API_KEY) + "&termo=" + encodeURIComponent(termo);
+      const resposta = await fetch(url);
+      const resultado = await resposta.json();
+      if (!resultado.ok || resultado.resultados.length === 0) {
+        container.innerHTML = '<div class="vazio">Nenhuma criança encontrada.</div>';
+        return;
+      }
+
+      const relatorios = await Promise.all(resultado.resultados.map(async function (c) {
+        const urlRel = API_URL + "?action=relatorioPorCrianca&apiKey=" + encodeURIComponent(API_KEY) + "&idCrianca=" + encodeURIComponent(c.idCrianca);
+        const respRel = await fetch(urlRel);
+        const resultRel = await respRel.json();
+        return resultRel.ok ? resultRel.relatorio : null;
+      }));
+
+      container.innerHTML = relatorios.filter(Boolean).map(cardCrianca).join('');
+    } catch (err) {
+      container.innerHTML = '<div class="vazio">Falha: ' + err.message + '</div>';
+    }
+  }
+
+  // ---------- Faltas ----------
+  async function carregarFaltas() {
+    const container = document.getElementById('conteudoFaltas');
+    container.innerHTML = '<div class="carregando">Carregando faltas...</div>';
+    try {
+      const url = API_URL + "?action=relatorioFaltas&apiKey=" + encodeURIComponent(API_KEY);
+      const resposta = await fetch(url);
+      const resultado = await resposta.json();
+      if (!resultado.ok) { container.innerHTML = '<div class="vazio">Erro: ' + resultado.erro + '</div>'; return; }
+
+      if (resultado.faltas.length === 0) {
+        container.innerHTML = '<div class="vazio">Nenhuma falta registrada. 🎉</div>';
+        return;
+      }
+
+      container.innerHTML = resultado.faltas.map(function (f) {
+        return '<div class="falta-item">' +
+          '<strong>' + f.nomeCrianca + '</strong>' +
+          '<div class="sub">' + f.idCrianca + (f.acs ? ' • ACS: ' + f.acs : '') + (f.telefone ? ' • Tel: ' + f.telefone : '') + '</div>' +
+          '<div class="sub">Faltou em ' + formatarDataBR(f.dataFalta) + ' (' + f.profissional + ')</div>' +
+          '</div>';
+      }).join('');
+    } catch (err) {
+      container.innerHTML = '<div class="vazio">Falha: ' + err.message + '</div>';
+    }
+  }
+
+  function formatarDataBR(iso) {
+    if (!iso) return '';
+    const partes = iso.split('-');
+    if (partes.length !== 3) return iso;
+    return partes[2] + '/' + partes[1] + '/' + partes[0];
+  }
+
+  // ---------- Inicializacao ----------
+  carregarRelatorioGeral();
+  carregarFaltas();
+</script>
+
+</body>
+</html>
