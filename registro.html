@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Puericultura - Vacinas e Visitas ACS</title>
+<style>
+  :root{
+    --azul-noite:#0F3D57;
+    --azul-medio:#1B6E8C;
+    --azul-claro:#5FB8D9;
+    --creme:#F7F9F6;
+    --alerta:#C24B4B;
+    --sucesso:#2E7D5B;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', Roboto, Arial, sans-serif;
+    background:var(--creme);
+    color:var(--azul-noite);
+    min-height:100vh;
+  }
+  header{
+    background:linear-gradient(135deg, var(--azul-noite), var(--azul-medio));
+    color:#fff;
+    padding:22px 20px 26px;
+    text-align:center;
+  }
+  header h1{ margin:0; font-size:22px; }
+  header p{ margin:6px 0 0; font-size:13px; opacity:.85; }
+  main{ max-width:480px; margin:0 auto; padding:20px 16px 60px; }
+  .card{
+    background:#fff;
+    border-radius:14px;
+    padding:20px;
+    box-shadow:0 2px 10px rgba(15,61,87,0.08);
+    margin-bottom:16px;
+  }
+  label{
+    display:block;
+    font-size:13px;
+    font-weight:600;
+    margin:12px 0 6px;
+    color:var(--azul-medio);
+  }
+  input, select{
+    width:100%;
+    padding:11px 12px;
+    border:1.5px solid #DCE6E9;
+    border-radius:8px;
+    font-size:15px;
+    font-family:inherit;
+    color:var(--azul-noite);
+    background:#FDFEFE;
+  }
+  input:focus, select:focus{ outline:none; border-color:var(--azul-claro); }
+  button{
+    width:100%;
+    margin-top:14px;
+    padding:14px;
+    border:none;
+    border-radius:10px;
+    background:var(--azul-medio);
+    color:#fff;
+    font-size:16px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  button:disabled{ background:#9FB9C4; cursor:not-allowed; }
+  .resultado-busca{
+    border:1px solid #E3ECEF;
+    border-radius:10px;
+    padding:12px;
+    margin-top:8px;
+    cursor:pointer;
+  }
+  .resultado-busca:hover{ background:#F1F7F9; }
+  .resultado-busca strong{ display:block; font-size:15px; }
+  .resultado-busca span{ font-size:12px; color:#5F7A85; }
+  .crianca-selecionada{
+    background:#EAF4F7;
+    border-radius:10px;
+    padding:14px;
+    margin-bottom:10px;
+  }
+  .crianca-selecionada strong{ font-size:16px; }
+  .crianca-selecionada .trocar{
+    display:inline-block;
+    margin-top:6px;
+    font-size:12px;
+    color:var(--azul-medio);
+    text-decoration:underline;
+    cursor:pointer;
+  }
+  .item-check{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 0;
+    border-bottom:1px solid #F0F4F5;
+    font-size:14px;
+  }
+  .item-check:last-child{ border-bottom:none; }
+  .item-check input[type=checkbox]{ width:18px; height:18px; flex-shrink:0; }
+  .item-check.ja-registrada{ color:#8A9AA1; }
+  .item-check .tag-ok{
+    margin-left:auto;
+    font-size:11px;
+    background:#E4F3EC;
+    color:var(--sucesso);
+    padding:3px 8px;
+    border-radius:6px;
+    font-weight:600;
+  }
+  .selecionar-todos{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:13px;
+    font-weight:600;
+    color:var(--azul-medio);
+    padding-bottom:8px;
+    border-bottom:1.5px solid #E3ECEF;
+    margin-bottom:4px;
+  }
+  .visita-box{
+    border:1.5px solid #E3ECEF;
+    border-radius:10px;
+    padding:12px;
+    margin-bottom:10px;
+  }
+  .visita-box.realizada{ background:#F0F8F3; border-color:#CFE8D8; }
+  .visita-box .titulo{ font-weight:700; font-size:14px; margin-bottom:6px; }
+  .visita-box .tag-realizada{ font-size:12px; color:var(--sucesso); }
+  .linha-dupla{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .aviso{
+    margin-top:14px;
+    padding:12px 14px;
+    border-radius:9px;
+    font-size:14px;
+    display:none;
+  }
+  .aviso.sucesso{ display:block; background:#E4F3EC; color:var(--sucesso); border:1px solid #BFE3D0; }
+  .aviso.erro{ display:block; background:#FBEAEA; color:var(--alerta); border:1px solid #F1C6C6; }
+  footer{ text-align:center; font-size:12px; color:#7C97A2; padding-bottom:20px; }
+  .oculto{ display:none; }
+  h2.titulo-secao{ font-size:15px; color:var(--azul-noite); margin:0 0 4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Puericultura</h1>
+  <p>ESF Flor do Cerrado - Vacinas e Visitas ACS</p>
+</header>
+
+<main>
+
+  <div class="card" id="cardBusca">
+    <label style="margin-top:0;">Buscar criança (nome, ID ou CNS)</label>
+    <input type="text" id="campoBusca" placeholder="Digite pelo menos 3 letras...">
+    <div id="resultados"></div>
+  </div>
+
+  <div class="oculto" id="areaCrianca">
+    <div class="card">
+      <div class="crianca-selecionada">
+        <strong id="nomeCrianca"></strong>
+        <div id="infoCrianca" style="font-size:13px;color:#5F7A85;margin-top:4px;"></div>
+        <span class="trocar" id="btnTrocar">Trocar criança</span>
+      </div>
+    </div>
+
+    <!-- VACINAS -->
+    <div class="card">
+      <h2 class="titulo-secao">Vacinas (indicador E)</h2>
+      <form id="formVacinas">
+        <div class="selecionar-todos">
+          <input type="checkbox" id="marcarTodas">
+          <label style="margin:0;" for="marcarTodas">Selecionar todas as pendentes</label>
+        </div>
+        <div id="listaVacinas"></div>
+
+        <label>Data de aplicação (aplicada a todas marcadas)</label>
+        <input type="date" id="dataAplicacao">
+
+        <button type="submit" id="btnSalvarVacinas">Salvar vacinas selecionadas</button>
+        <div id="avisoVacinas" class="aviso"></div>
+      </form>
+    </div>
+
+    <!-- VISITAS ACS -->
+    <div class="card">
+      <h2 class="titulo-secao">Visitas de ACS (indicador D)</h2>
+      <div id="areaVisitas"></div>
+      <div id="avisoVisitas" class="aviso"></div>
+    </div>
+  </div>
+
+</main>
+
+<footer>antonioresolve.com.br</footer>
+
+<script>
+  const API_URL = "https://script.google.com/macros/s/AKfycbz9G6wxwGqE4KGuZnVRJSXitb9st3sHh0OlY5JjRL4D-pHzTiy5oG7phukqqBRaDK98UQ/exec";
+  const API_KEY = "FC_PUERI2026";
+
+  const campoBusca = document.getElementById('campoBusca');
+  const resultadosDiv = document.getElementById('resultados');
+  const cardBusca = document.getElementById('cardBusca');
+  const areaCrianca = document.getElementById('areaCrianca');
+  const nomeCriancaEl = document.getElementById('nomeCrianca');
+  const infoCriancaEl = document.getElementById('infoCrianca');
+  const btnTrocar = document.getElementById('btnTrocar');
+
+  let criancaAtual = null;
+  let timeoutBusca = null;
+
+  campoBusca.addEventListener('input', function () {
+    clearTimeout(timeoutBusca);
+    const termo = campoBusca.value.trim();
+    if (termo.length < 3) { resultadosDiv.innerHTML = ''; return; }
+    timeoutBusca = setTimeout(function () { buscarCriancas(termo); }, 350);
+  });
+
+  async function buscarCriancas(termo) {
+    resultadosDiv.innerHTML = '<p style="font-size:13px;color:#5F7A85;">Buscando...</p>';
+    try {
+      const url = API_URL + "?action=buscarCrianca&apiKey=" + encodeURIComponent(API_KEY) + "&termo=" + encodeURIComponent(termo);
+      const resposta = await fetch(url);
+      const resultado = await resposta.json();
+      if (!resultado.ok || resultado.resultados.length === 0) {
+        resultadosDiv.innerHTML = '<p style="font-size:13px;color:#5F7A85;">Nenhuma criança encontrada.</p>';
+        return;
+      }
+      resultadosDiv.innerHTML = '';
+      resultado.resultados.forEach(function (c) {
+        const div = document.createElement('div');
+        div.className = 'resultado-busca';
+        div.innerHTML = '<strong>' + c.nome + '</strong><span>' + c.idCrianca + ' - Nasc: ' + formatarDataBR(c.dataNascimento) + '</span>';
+        div.addEventListener('click', function () { selecionarCrianca(c); });
+        resultadosDiv.appendChild(div);
+      });
+    } catch (err) {
+      resultadosDiv.innerHTML = '<p style="font-size:13px;color:var(--alerta);">Erro na busca: ' + err.message + '</p>';
+    }
+  }
+
+  function selecionarCrianca(c) {
+    criancaAtual = c;
+    nomeCriancaEl.textContent = c.nome;
+    infoCriancaEl.textContent = c.idCrianca + ' • Nasc: ' + formatarDataBR(c.dataNascimento) + (c.acs ? ' • ACS: ' + c.acs : '');
+    cardBusca.classList.add('oculto');
+    areaCrianca.classList.remove('oculto');
+    campoBusca.value = '';
+    resultadosDiv.innerHTML = '';
+    document.getElementById('dataAplicacao').value = new Date().toISOString().slice(0, 10);
+    carregarVacinas(c.idCrianca);
+    carregarVisitas(c.idCrianca);
+  }
+
+  btnTrocar.addEventListener('click', function () {
+    criancaAtual = null;
+    areaCrianca.classList.add('oculto');
+    cardBusca.classList.remove('oculto');
+  });
+
+  // ---------- Vacinas ----------
+  async function carregarVacinas(idCrianca) {
+    const container = document.getElementById('listaVacinas');
+    container.innerHTML = '<p style="font-size:13px;color:#5F7A85;">Carregando...</p>';
+    try {
+      const url = API_URL + "?action=listarVacinasCrianca&apiKey=" + encodeURIComponent(API_KEY) + "&idCrianca=" + encodeURIComponent(idCrianca);
+      const resposta = await fetch(url);
+      const resultado = await resposta.json();
+      if (!resultado.ok) { container.innerHTML = '<p>Erro: ' + resultado.erro + '</p>'; return; }
+
+      const aplicadas = resultado.vacinas.filter(function (v) { return v.status === 'Aplicada'; }).map(function (v) { return v.vacina; });
+
+      container.innerHTML = '';
+      resultado.vacinasPadrao.forEach(function (vacina) {
+        const jaAplicada = aplicadas.indexOf(vacina) !== -1;
+        const div = document.createElement('div');
+        div.className = 'item-check' + (jaAplicada ? ' ja-registrada' : '');
+        div.innerHTML =
+          '<input type="checkbox" class="check-vacina" value="' + vacina + '" ' + (jaAplicada ? 'checked disabled' : '') + '>' +
+          '<span>' + vacina + '</span>' +
+          (jaAplicada ? '<span class="tag-ok">Já aplicada</span>' : '');
+        container.appendChild(div);
+      });
+    } catch (err) {
+      container.innerHTML = '<p style="color:var(--alerta);">Falha: ' + err.message + '</p>';
+    }
+  }
+
+  document.getElementById('marcarTodas').addEventListener('change', function () {
+    const marcado = this.checked;
+    document.querySelectorAll('.check-vacina:not(:disabled)').forEach(function (cb) { cb.checked = marcado; });
+  });
+
+  document.getElementById('formVacinas').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const selecionadas = Array.from(document.querySelectorAll('.check-vacina:checked:not(:disabled)')).map(function (cb) { return cb.value; });
+    const aviso = document.getElementById('avisoVacinas');
+    const btn = document.getElementById('btnSalvarVacinas');
+
+    if (selecionadas.length === 0) {
+      aviso.className = 'aviso erro';
+      aviso.textContent = 'Selecione pelo menos uma vacina.';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Salvando...';
+    aviso.className = 'aviso';
+
+    try {
+      const resposta = await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'registrarVacinas',
+          apiKey: API_KEY,
+          dados: {
+            idCrianca: criancaAtual.idCrianca,
+            vacinas: selecionadas,
+            dataAplicacao: document.getElementById('dataAplicacao').value,
+          }
+        })
+      });
+      const resultado = await resposta.json();
+
+      if (resultado.ok) {
+        aviso.className = 'aviso sucesso';
+        aviso.textContent = resultado.vacinas.length + ' vacina(s) registrada(s) com sucesso!';
+        document.getElementById('marcarTodas').checked = false;
+        carregarVacinas(criancaAtual.idCrianca);
+      } else {
+        aviso.className = 'aviso erro';
+        aviso.textContent = 'Erro: ' + resultado.erro;
+      }
+    } catch (err) {
+      aviso.className = 'aviso erro';
+      aviso.textContent = 'Falha de conexão: ' + err.message;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Salvar vacinas selecionadas';
+    }
+  });
+
+  // ---------- Visitas ACS ----------
+  async function carregarVisitas(idCrianca) {
+    const container = document.getElementById('areaVisitas');
+    container.innerHTML = '<p style="font-size:13px;color:#5F7A85;">Carregando...</p>';
+    try {
+      const url = API_URL + "?action=listarVisitasAcsCrianca&apiKey=" + encodeURIComponent(API_KEY) + "&idCrianca=" + encodeURIComponent(idCrianca);
+      const resposta = await fetch(url);
+      const resultado = await resposta.json();
+      if (!resultado.ok) { container.innerHTML = '<p>Erro: ' + resultado.erro + '</p>'; return; }
+
+      const realizadas = {};
+      resultado.visitas.filter(function (v) { return v.status === 'Realizada'; }).forEach(function (v) { realizadas[v.numeroVisita] = v; });
+
+      container.innerHTML = '';
+      [1, 2].forEach(function (numero) {
+        const label = numero === 1 ? '1ª visita (até 30 dias)' : '2ª visita (até 6 meses)';
+        const jaRealizada = realizadas[numero];
+        const box = document.createElement('div');
+        box.className = 'visita-box' + (jaRealizada ? ' realizada' : '');
+
+        if (jaRealizada) {
+          box.innerHTML =
+            '<div class="titulo">' + label + '</div>' +
+            '<div class="tag-realizada">✅ Realizada em ' + formatarDataBR(jaRealizada.dataVisita) + (jaRealizada.acsResponsavel ? ' por ' + jaRealizada.acsResponsavel : '') + '</div>';
+        } else {
+          box.innerHTML =
+            '<div class="titulo">' + label + '</div>' +
+            '<div class="linha-dupla">' +
+              '<div><label style="margin:6px 0 4px;">Data</label><input type="date" class="data-visita" data-numero="' + numero + '"></div>' +
+              '<div><label style="margin:6px 0 4px;">ACS responsável</label><input type="text" class="acs-visita" data-numero="' + numero + '"></div>' +
+            '</div>' +
+            '<button type="button" class="btn-registrar-visita" data-numero="' + numero + '">Marcar como realizada</button>';
+        }
+        container.appendChild(box);
+      });
+
+      document.querySelectorAll('.btn-registrar-visita').forEach(function (btn) {
+        btn.addEventListener('click', function () { registrarVisita(this.getAttribute('data-numero')); });
+      });
+    } catch (err) {
+      container.innerHTML = '<p style="color:var(--alerta);">Falha: ' + err.message + '</p>';
+    }
+  }
+
+  async function registrarVisita(numero) {
+    const dataInput = document.querySelector('.data-visita[data-numero="' + numero + '"]');
+    const acsInput = document.querySelector('.acs-visita[data-numero="' + numero + '"]');
+    const aviso = document.getElementById('avisoVisitas');
+
+    if (!dataInput.value) {
+      aviso.className = 'aviso erro';
+      aviso.textContent = 'Informe a data da visita.';
+      return;
+    }
+
+    aviso.className = 'aviso';
+    try {
+      const resposta = await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'registrarVisitaAcs',
+          apiKey: API_KEY,
+          dados: {
+            idCrianca: criancaAtual.idCrianca,
+            numeroVisita: numero,
+            dataVisita: dataInput.value,
+            acsResponsavel: acsInput.value,
+          }
+        })
+      });
+      const resultado = await resposta.json();
+
+      if (resultado.ok) {
+        aviso.className = 'aviso sucesso';
+        aviso.textContent = 'Visita registrada com sucesso!';
+        carregarVisitas(criancaAtual.idCrianca);
+      } else {
+        aviso.className = 'aviso erro';
+        aviso.textContent = 'Erro: ' + resultado.erro;
+      }
+    } catch (err) {
+      aviso.className = 'aviso erro';
+      aviso.textContent = 'Falha de conexão: ' + err.message;
+    }
+  }
+
+  function formatarDataBR(iso) {
+    if (!iso) return '';
+    const partes = iso.split('-');
+    if (partes.length !== 3) return iso;
+    return partes[2] + '/' + partes[1] + '/' + partes[0];
+  }
+</script>
+
+</body>
+</html>
