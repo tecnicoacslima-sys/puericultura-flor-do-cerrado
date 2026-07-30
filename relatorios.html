@@ -173,6 +173,41 @@
   .vazio{ font-size:13px; color:#5F7A85; text-align:center; padding:20px; }
 
   footer{ text-align:center; font-size:12px; color:#7C97A2; padding-bottom:20px; }
+
+  .btn-pdf{
+    width:100%;
+    padding:12px;
+    border:1.5px solid var(--azul-medio);
+    border-radius:10px;
+    background:#fff;
+    color:var(--azul-medio);
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    margin-bottom:14px;
+  }
+  .btn-pdf:hover{ background:#F1F7F9; }
+
+  .titulo-impressao{ display:none; }
+
+  @media print{
+    header{ background:none !important; color:var(--azul-noite) !important; padding:6px 0; }
+    .abas, .btn-pdf, .filtro, select, input[type=text]{ display:none !important; }
+    body.modo-impressao .painel{ display:block !important; break-inside:avoid; }
+    body.modo-impressao .titulo-impressao{
+      display:block;
+      font-size:16px;
+      font-weight:700;
+      color:var(--azul-noite);
+      margin:22px 0 10px;
+      border-bottom:2px solid var(--azul-medio);
+      padding-bottom:4px;
+    }
+    body.modo-impressao .titulo-impressao:first-of-type{ margin-top:0; }
+    .card, .falta-item, .resumo-item{ box-shadow:none !important; border:1px solid #E3ECEF; }
+    .indicador{ cursor:default; }
+    footer{ margin-top:20px; }
+  }
 </style>
 </head>
 <body>
@@ -190,8 +225,11 @@
     <div class="aba" data-aba="faltas">Faltas (busca ativa)</div>
   </div>
 
+  <button type="button" class="btn-pdf" id="btnGerarPdf">📄 Baixar / Imprimir PDF (relatório completo)</button>
+
   <!-- PAINEL GERAL / POR ACS -->
   <div class="painel ativo" id="painelGeral">
+    <h2 class="titulo-impressao">Geral / Por ACS</h2>
     <div class="filtro">
       <select id="filtroAcs">
         <option value="">Todas as ACS</option>
@@ -202,6 +240,7 @@
 
   <!-- PAINEL POR CRIANÇA -->
   <div class="painel" id="painelCrianca">
+    <h2 class="titulo-impressao">Por criança</h2>
     <div class="filtro">
       <input type="text" id="buscaCriancaRelatorio" placeholder="Buscar por nome, ID ou CNS...">
     </div>
@@ -210,6 +249,7 @@
 
   <!-- PAINEL FALTAS -->
   <div class="painel" id="painelFaltas">
+    <h2 class="titulo-impressao">Faltas (busca ativa)</h2>
     <div id="conteudoFaltas" class="carregando">Carregando faltas...</div>
   </div>
 
@@ -289,6 +329,23 @@
   });
   document.getElementById('overlayModal').addEventListener('click', function (e) {
     if (e.target === this) this.classList.remove('aberto');
+  });
+
+  // ---------- Gerar PDF (relatorio completo com as 3 visoes) ----------
+  document.getElementById('btnGerarPdf').addEventListener('click', async function () {
+    // Garante que o conteudo de "Por crianca" tenha algo pra mostrar no PDF:
+    // se nao houver busca ativa, mostra o mesmo relatorio geral (todas as criancas).
+    const conteudoCrianca = document.getElementById('conteudoCrianca');
+    if (!document.getElementById('buscaCriancaRelatorio').value.trim()) {
+      conteudoCrianca.innerHTML = relatorioGeralCache.map(cardCrianca).join('');
+    }
+
+    document.body.classList.add('modo-impressao');
+    window.print();
+  });
+
+  window.addEventListener('afterprint', function () {
+    document.body.classList.remove('modo-impressao');
   });
 
   // ---------- Abas ----------
