@@ -174,6 +174,21 @@
 
 
 <main>
+  <div class="card" id="cardImportarCelk">
+    <div id="toggleImportar" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+      <strong style="font-size:14px;color:var(--azul-medio);">📋 Importar do espelho CELK</strong>
+      <span id="setaImportar" style="font-size:12px;color:#5F7A85;">▼ abrir</span>
+    </div>
+    <div id="areaImportar" style="display:none;margin-top:12px;">
+      <p style="font-size:12.5px;color:#5F7A85;margin:0 0 8px;">
+        Abra a ficha do paciente no CELK, selecione todo o texto (Ctrl+A) e copie (Ctrl+C). Cole aqui embaixo — o app tenta preencher nome, data de nascimento, nome da mãe, CNS e telefone automaticamente. Confira os campos antes de salvar.
+      </p>
+      <textarea id="textoCelk" placeholder="Cole aqui o texto copiado da ficha do paciente..." style="min-height:110px;"></textarea>
+      <button type="button" id="btnImportarCelk" style="background:var(--azul-claro);margin-top:10px;">Preencher formulário</button>
+      <div id="avisoImportar" class="aviso"></div>
+    </div>
+  </div>
+
   <div class="card">
     <form id="formCadastro">
 
@@ -311,6 +326,87 @@
   });
 
   carregarAcsMicroarea();
+
+  // ===================== IMPORTAR DO ESPELHO CELK =====================
+  const toggleImportar = document.getElementById('toggleImportar');
+  const areaImportar = document.getElementById('areaImportar');
+  const setaImportar = document.getElementById('setaImportar');
+  const textoCelk = document.getElementById('textoCelk');
+  const btnImportarCelk = document.getElementById('btnImportarCelk');
+  const avisoImportar = document.getElementById('avisoImportar');
+
+  toggleImportar.addEventListener('click', function () {
+    const abrindo = areaImportar.style.display === 'none';
+    areaImportar.style.display = abrindo ? 'block' : 'none';
+    setaImportar.textContent = abrindo ? '▲ fechar' : '▼ abrir';
+  });
+
+  function extrairDadosCelk(textoOriginal) {
+    // Normaliza espaços/quebras de linha, já que o texto colado do CELK
+    // (tela ou PDF) pode vir em ordem de leitura diferente da visual.
+    const texto = textoOriginal.replace(/\s+/g, ' ').trim();
+    const dados = {};
+
+    let m = texto.match(/Paciente:\s*([A-ZÀ-Ü\s]+?)\s+(?:Situa[çc][ãa]o:|Sexo:)/i);
+    if (m) dados.nome = m[1].trim();
+
+    m = texto.match(/Data de Nasc\.?:\s*(\d{2})\/(\d{2})\/(\d{4})/i);
+    if (m) dados.dataNascimento = m[3] + '-' + m[2] + '-' + m[1];
+
+    m = texto.match(/Nome da M[ãa]e:\s*([A-ZÀ-Ü\s]+?)\s+(?:Nome do Pai|Telefone|Data Fixa)/i);
+    if (m) dados.nomeResponsavel = m[1].trim();
+
+    // CNS: padrão de 15 dígitos agrupados de 3 em 3 (XXX.XXX.XXX.XXX.XXX)
+    m = texto.match(/(\d{3}\.\d{3}\.\d{3}\.\d{3}\.\d{3})/);
+    if (m) dados.cns = m[1].replace(/\./g, '');
+
+    // Telefone: (XX) XXXXX-XXXX ou (XX) XXXX-XXXX
+    m = texto.match(/\((\d{2})\)\s?(\d{4,5}-\d{4})/);
+    if (m) dados.telefone = '(' + m[1] + ') ' + m[2];
+
+    return dados;
+  }
+
+  btnImportarCelk.addEventListener('click', function () {
+    const texto = textoCelk.value.trim();
+    avisoImportar.className = 'aviso';
+    avisoImportar.textContent = '';
+
+    if (!texto) {
+      avisoImportar.className = 'aviso erro';
+      avisoImportar.textContent = 'Cole o texto da ficha antes de preencher.';
+      return;
+    }
+
+    const dados = extrairDadosCelk(texto);
+    const preenchidos = [];
+    const naoEncontrados = [];
+
+    if (dados.nome) { document.getElementById('nome').value = dados.nome; preenchidos.push('Nome'); }
+    else naoEncontrados.push('Nome');
+
+    if (dados.dataNascimento) { document.getElementById('dataNascimento').value = dados.dataNascimento; preenchidos.push('Data de nascimento'); }
+    else naoEncontrados.push('Data de nascimento');
+
+    if (dados.nomeResponsavel) { document.getElementById('nomeResponsavel').value = dados.nomeResponsavel; preenchidos.push('Nome do responsável'); }
+    else naoEncontrados.push('Nome do responsável');
+
+    if (dados.cns) { document.getElementById('cns').value = dados.cns; preenchidos.push('CNS'); }
+    else naoEncontrados.push('CNS');
+
+    if (dados.telefone) { document.getElementById('telefone').value = dados.telefone; preenchidos.push('Telefone'); }
+    else naoEncontrados.push('Telefone');
+
+    if (preenchidos.length === 0) {
+      avisoImportar.className = 'aviso erro';
+      avisoImportar.textContent = 'Não consegui reconhecer os dados nesse texto. Confira se colou a ficha do paciente completa.';
+      return;
+    }
+
+    avisoImportar.className = 'aviso sucesso';
+    avisoImportar.textContent = 'Preenchido: ' + preenchidos.join(', ') + '.' +
+      (naoEncontrados.length ? ' Não encontrado (preencha manualmente): ' + naoEncontrados.join(', ') + '.' : '');
+  });
 
   form.addEventListener('submit', async function(e){
     e.preventDefault();
