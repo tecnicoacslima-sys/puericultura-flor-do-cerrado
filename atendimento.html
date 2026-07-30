@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Puericultura - Agendamento</title>
+<title>Puericultura - Atendimento</title>
 <style>
   :root{
     --azul-noite:#0F3D57;
@@ -30,11 +30,7 @@
   }
   header h1{ margin:0; font-size:22px; }
   header p{ margin:6px 0 0; font-size:13px; opacity:.85; }
-  main{
-    max-width:480px;
-    margin:0 auto;
-    padding:20px 16px 60px;
-  }
+  main{ max-width:480px; margin:0 auto; padding:20px 16px 60px; }
   .card{
     background:#fff;
     border-radius:14px;
@@ -46,7 +42,7 @@
     display:block;
     font-size:13px;
     font-weight:600;
-    margin:6px 0 6px;
+    margin:12px 0 6px;
     color:var(--azul-medio);
   }
   input, select{
@@ -72,23 +68,39 @@
     font-weight:600;
     cursor:pointer;
   }
-  button.secundario{
-    background:#fff;
-    color:var(--azul-medio);
-    border:1.5px solid var(--azul-medio);
-  }
   button:disabled{ background:#9FB9C4; cursor:not-allowed; }
+  a.link-reagendar{
+    display:block;
+    text-align:center;
+    margin-top:12px;
+    color:var(--azul-medio);
+    font-size:14px;
+    font-weight:600;
+    text-decoration:none;
+    border:1.5px solid var(--azul-medio);
+    border-radius:10px;
+    padding:12px;
+  }
   .resultado-busca{
     border:1px solid #E3ECEF;
     border-radius:10px;
     padding:12px;
     margin-top:8px;
     cursor:pointer;
-    transition:background .15s;
   }
   .resultado-busca:hover{ background:#F1F7F9; }
   .resultado-busca strong{ display:block; font-size:15px; }
   .resultado-busca span{ font-size:12px; color:#5F7A85; }
+  .item-agendado{
+    border:1px solid #E3ECEF;
+    border-radius:10px;
+    padding:12px;
+    margin-top:8px;
+    cursor:pointer;
+  }
+  .item-agendado:hover{ background:#F1F7F9; }
+  .item-agendado strong{ display:block; font-size:15px; }
+  .item-agendado span{ font-size:12px; color:#5F7A85; }
   .crianca-selecionada{
     background:#EAF4F7;
     border-radius:10px;
@@ -104,37 +116,9 @@
     text-decoration:underline;
     cursor:pointer;
   }
-  .sugestao{
-    background:#F0F8F3;
-    border:1px solid #CFE8D8;
-    border-radius:10px;
-    padding:14px;
-    margin:14px 0;
-  }
-  .sugestao .linha{
-    display:flex;
-    justify-content:space-between;
-    font-size:14px;
-    margin:4px 0;
-  }
-  .sugestao .linha b{ color:var(--azul-noite); }
-  .aviso-caixa{
-    background:#FDF3E3;
-    border:1px solid #F1D9A6;
-    color:var(--aviso);
-    border-radius:8px;
-    padding:10px 12px;
-    font-size:13px;
-    margin-top:10px;
-  }
-  .meta-caixa{
-    background:#E4F3EC;
-    border:1px solid #BFE3D0;
-    color:var(--sucesso);
-    border-radius:8px;
-    padding:10px 12px;
-    font-size:13px;
-  }
+  .linha-dupla{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .campos-medida{ display:none; }
+  .campos-medida.visivel{ display:block; }
   .aviso{
     margin-top:14px;
     padding:12px 14px;
@@ -152,7 +136,7 @@
 
 <header>
   <h1>Puericultura</h1>
-  <p>ESF Flor do Cerrado - Agendamento</p>
+  <p>ESF Flor do Cerrado - Atendimento</p>
 </header>
 
 <main>
@@ -170,27 +154,41 @@
       <span class="trocar" id="btnTrocar">Trocar criança</span>
     </div>
 
-    <div id="areaSugestao"></div>
+    <div id="areaListaAgendados"></div>
+  </div>
 
-    <form id="formAgendar" class="oculto">
-      <label>Data da consulta</label>
-      <input type="date" id="dataConsulta" required>
+  <div class="card oculto" id="cardAtendimento">
+    <label style="margin-top:0;">Consulta selecionada</label>
+    <div id="resumoConsulta" style="font-size:14px;color:#5F7A85;margin-bottom:8px;"></div>
 
-      <label>Profissional</label>
-      <select id="profissional" required>
-        <option value="Enfermeira">Enfermeira</option>
-        <option value="Medica">Médica</option>
+    <form id="formAtendimento">
+      <label>Status</label>
+      <select id="status" required>
+        <option value="Compareceu">Compareceu</option>
+        <option value="Faltou">Faltou</option>
+        <option value="Remarcado">Remarcado</option>
       </select>
 
-      <label>Tipo de atendimento</label>
-      <select id="tipoAtendimento">
-        <option value="Consulta">Consulta</option>
-        <option value="Visita Domiciliar Compartilhada">Visita Domiciliar Compartilhada</option>
-        <option value="Avulso">Avulso</option>
-      </select>
+      <div id="camposMedida" class="campos-medida">
+        <div class="linha-dupla">
+          <div>
+            <label>Peso (kg)</label>
+            <input type="number" step="0.01" id="pesoKg">
+          </div>
+          <div>
+            <label>Altura (cm)</label>
+            <input type="number" step="0.1" id="alturaCm">
+          </div>
+        </div>
+      </div>
 
-      <button type="submit" id="btnAgendar">Confirmar agendamento</button>
+      <label>Observações</label>
+      <input type="text" id="observacoes">
+
+      <button type="submit" id="btnSalvar">Salvar atendimento</button>
       <div id="aviso" class="aviso"></div>
+
+      <a href="#" class="link-reagendar oculto" id="linkReagendar">Ver nova sugestão de agendamento →</a>
     </form>
   </div>
 
@@ -206,14 +204,20 @@
   const resultadosDiv = document.getElementById('resultados');
   const cardBusca = document.getElementById('cardBusca');
   const cardCrianca = document.getElementById('cardCrianca');
+  const cardAtendimento = document.getElementById('cardAtendimento');
   const nomeCriancaEl = document.getElementById('nomeCrianca');
   const infoCriancaEl = document.getElementById('infoCrianca');
-  const areaSugestao = document.getElementById('areaSugestao');
-  const formAgendar = document.getElementById('formAgendar');
+  const areaListaAgendados = document.getElementById('areaListaAgendados');
   const btnTrocar = document.getElementById('btnTrocar');
+  const resumoConsulta = document.getElementById('resumoConsulta');
+  const statusSelect = document.getElementById('status');
+  const camposMedida = document.getElementById('camposMedida');
+  const formAtendimento = document.getElementById('formAtendimento');
   const aviso = document.getElementById('aviso');
+  const linkReagendar = document.getElementById('linkReagendar');
 
   let criancaAtual = null;
+  let atendimentoAtual = null;
   let timeoutBusca = null;
 
   campoBusca.addEventListener('input', function () {
@@ -254,66 +258,74 @@
     infoCriancaEl.textContent = c.idCrianca + ' • Nasc: ' + formatarDataBR(c.dataNascimento) + (c.acs ? ' • ACS: ' + c.acs : '');
     cardBusca.classList.add('oculto');
     cardCrianca.classList.remove('oculto');
+    cardAtendimento.classList.add('oculto');
     campoBusca.value = '';
     resultadosDiv.innerHTML = '';
-    carregarSugestao(c.idCrianca);
+    carregarAgendados(c.idCrianca);
   }
 
   btnTrocar.addEventListener('click', function () {
     criancaAtual = null;
     cardCrianca.classList.add('oculto');
+    cardAtendimento.classList.add('oculto');
     cardBusca.classList.remove('oculto');
-    formAgendar.classList.add('oculto');
-    areaSugestao.innerHTML = '';
-    aviso.className = 'aviso';
   });
 
-  async function carregarSugestao(idCrianca) {
-    areaSugestao.innerHTML = '<p style="font-size:13px;color:#5F7A85;">Calculando sugestão...</p>';
-    formAgendar.classList.add('oculto');
+  async function carregarAgendados(idCrianca) {
+    areaListaAgendados.innerHTML = '<p style="font-size:13px;color:#5F7A85;margin-top:10px;">Buscando consultas agendadas...</p>';
     try {
-      const url = API_URL + "?action=sugerirProximaConsulta&apiKey=" + encodeURIComponent(API_KEY) + "&idCrianca=" + encodeURIComponent(idCrianca);
+      const url = API_URL + "?action=listarAtendimentosAgendados&apiKey=" + encodeURIComponent(API_KEY) + "&idCrianca=" + encodeURIComponent(idCrianca);
       const resposta = await fetch(url);
       const resultado = await resposta.json();
 
       if (!resultado.ok) {
-        areaSugestao.innerHTML = '<div class="aviso erro" style="display:block;">Erro: ' + resultado.erro + '</div>';
+        areaListaAgendados.innerHTML = '<div class="aviso erro" style="display:block;margin-top:10px;">Erro: ' + resultado.erro + '</div>';
         return;
       }
 
-      const s = resultado.sugestao;
-
-      if (s.metaAtingida) {
-        areaSugestao.innerHTML = '<div class="meta-caixa">✅ Meta de 9 consultas já atingida (' + s.consultasRealizadas + '/9). Nenhum agendamento necessário.</div>';
+      if (resultado.atendimentos.length === 0) {
+        areaListaAgendados.innerHTML = '<p style="font-size:13px;color:#5F7A85;margin-top:10px;">Nenhuma consulta agendada em aberto para essa criança. Agende primeiro na tela de Agendamento.</p>';
         return;
       }
 
-      let html = '<div class="sugestao">';
-      html += '<div class="linha"><span>Idade atual</span><b>' + s.idadeAtualMeses + ' meses</b></div>';
-      html += '<div class="linha"><span>Consultas realizadas</span><b>' + s.consultasRealizadas + '/9</b></div>';
-      html += '<div class="linha"><span>Data sugerida</span><b>' + formatarDataBR(s.dataSugerida) + '</b></div>';
-      html += '<div class="linha"><span>Profissional sugerido</span><b>' + s.profissionalSugerido + '</b></div>';
-      html += '</div>';
-
-      if (s.metaEmRisco) {
-        html += '<div class="aviso-caixa">⚠️ ' + s.mensagem + '</div>';
-      } else if (s.intervaloApertado) {
-        html += '<div class="aviso-caixa">⚠️ ' + s.avisoIntervaloApertado + '</div>';
-      }
-
-      areaSugestao.innerHTML = html;
-
-      document.getElementById('dataConsulta').value = s.dataSugerida;
-      document.getElementById('profissional').value = s.profissionalSugerido;
-      formAgendar.classList.remove('oculto');
+      areaListaAgendados.innerHTML = '<label style="margin-top:14px;">Consultas agendadas em aberto</label>';
+      resultado.atendimentos.forEach(function (a) {
+        const div = document.createElement('div');
+        div.className = 'item-agendado';
+        div.innerHTML = '<strong>' + formatarDataBR(a.dataAtendimento) + ' - ' + a.profissional + '</strong><span>' + a.tipoAtendimento + (a.numeroConsulta ? ' • Consulta ' + a.numeroConsulta + '/9' : '') + '</span>';
+        div.addEventListener('click', function () { selecionarAtendimento(a); });
+        areaListaAgendados.appendChild(div);
+      });
     } catch (err) {
-      areaSugestao.innerHTML = '<div class="aviso erro" style="display:block;">Falha ao calcular sugestão: ' + err.message + '</div>';
+      areaListaAgendados.innerHTML = '<div class="aviso erro" style="display:block;margin-top:10px;">Falha: ' + err.message + '</div>';
     }
   }
 
-  formAgendar.addEventListener('submit', async function (e) {
+  function selecionarAtendimento(a) {
+    atendimentoAtual = a;
+    resumoConsulta.textContent = formatarDataBR(a.dataAtendimento) + ' - ' + a.profissional + ' (' + a.tipoAtendimento + ')';
+    cardAtendimento.classList.remove('oculto');
+    statusSelect.value = 'Compareceu';
+    atualizarVisibilidadeMedidas();
+    aviso.className = 'aviso';
+    linkReagendar.classList.add('oculto');
+    linkReagendar.href = 'agendamento.html?idCrianca=' + encodeURIComponent(criancaAtual.idCrianca);
+    cardAtendimento.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  statusSelect.addEventListener('change', atualizarVisibilidadeMedidas);
+  function atualizarVisibilidadeMedidas() {
+    if (statusSelect.value === 'Compareceu') {
+      camposMedida.classList.add('visivel');
+    } else {
+      camposMedida.classList.remove('visivel');
+    }
+    linkReagendar.classList.toggle('oculto', statusSelect.value !== 'Remarcado');
+  }
+
+  formAtendimento.addEventListener('submit', async function (e) {
     e.preventDefault();
-    const btn = document.getElementById('btnAgendar');
+    const btn = document.getElementById('btnSalvar');
     btn.disabled = true;
     btn.textContent = 'Salvando...';
     aviso.className = 'aviso';
@@ -322,13 +334,14 @@
       const resposta = await fetch(API_URL, {
         method: 'POST',
         body: JSON.stringify({
-          action: 'agendarConsulta',
+          action: 'atualizarAtendimento',
           apiKey: API_KEY,
           dados: {
-            idCrianca: criancaAtual.idCrianca,
-            dataAtendimento: document.getElementById('dataConsulta').value,
-            profissional: document.getElementById('profissional').value,
-            tipoAtendimento: document.getElementById('tipoAtendimento').value,
+            idAtendimento: atendimentoAtual.idAtendimento,
+            status: statusSelect.value,
+            pesoKg: document.getElementById('pesoKg').value,
+            alturaCm: document.getElementById('alturaCm').value,
+            observacoes: document.getElementById('observacoes').value,
           }
         })
       });
@@ -336,7 +349,11 @@
 
       if (resultado.ok) {
         aviso.className = 'aviso sucesso';
-        aviso.textContent = 'Consulta agendada! ID: ' + resultado.atendimento.idAtendimento;
+        aviso.textContent = 'Atendimento atualizado com sucesso!';
+        if (statusSelect.value === 'Remarcado') {
+          linkReagendar.classList.remove('oculto');
+        }
+        carregarAgendados(criancaAtual.idCrianca);
       } else {
         aviso.className = 'aviso erro';
         aviso.textContent = 'Erro: ' + resultado.erro;
@@ -346,7 +363,7 @@
       aviso.textContent = 'Falha de conexão: ' + err.message;
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Confirmar agendamento';
+      btn.textContent = 'Salvar atendimento';
     }
   });
 
@@ -356,28 +373,6 @@
     if (partes.length !== 3) return iso;
     return partes[2] + '/' + partes[1] + '/' + partes[0];
   }
-
-  // Se a pagina foi aberta com ?idCrianca=C-0001 (ex: link de "Reagendar" vindo
-  // do Atendimento), busca e seleciona a crianca automaticamente.
-  (function autoSelecionarPorQueryString() {
-    const params = new URLSearchParams(window.location.search);
-    const idCrianca = params.get('idCrianca');
-    if (!idCrianca) return;
-
-    (async function () {
-      try {
-        const url = API_URL + "?action=buscarCrianca&apiKey=" + encodeURIComponent(API_KEY) + "&termo=" + encodeURIComponent(idCrianca);
-        const resposta = await fetch(url);
-        const resultado = await resposta.json();
-        if (resultado.ok && resultado.resultados.length > 0) {
-          const encontrada = resultado.resultados.find(function (c) { return c.idCrianca === idCrianca; }) || resultado.resultados[0];
-          selecionarCrianca(encontrada);
-        }
-      } catch (err) {
-        console.error('Falha ao auto-selecionar crianca:', err);
-      }
-    })();
-  })();
 </script>
 
 </body>
