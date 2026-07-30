@@ -225,6 +225,19 @@
       <button type="submit" id="btnAgendar">Confirmar agendamento</button>
       <div id="aviso" class="aviso"></div>
     </form>
+
+    <div class="oculto" id="areaSegundoProfissional">
+      <div class="aviso-caixa" style="margin-top:0;">
+        👥 Essa é uma Visita Domiciliar Compartilhada. Adicione o segundo profissional que também esteve na visita, pra contar como mais uma consulta.
+      </div>
+      <label>Segundo profissional</label>
+      <select id="segundoProfissional">
+        <option value="Enfermeira">Enfermeira</option>
+        <option value="Medica">Médica</option>
+      </select>
+      <button type="button" class="secundario" id="btnAdicionarSegundo">+ Adicionar segundo profissional</button>
+      <div id="avisoSegundo" class="aviso"></div>
+    </div>
   </div>
 
 </main>
@@ -306,9 +319,11 @@
     formAgendar.classList.add('oculto');
     areaSugestao.innerHTML = '';
     aviso.className = 'aviso';
+    document.getElementById('areaSegundoProfissional').classList.add('oculto');
   });
 
   async function carregarSugestao(idCrianca) {
+    document.getElementById('areaSegundoProfissional').classList.add('oculto');
     areaSugestao.innerHTML = '<p style="font-size:13px;color:#5F7A85;">Calculando sugestão...</p>';
     formAgendar.classList.add('oculto');
     try {
@@ -351,12 +366,21 @@
     }
   }
 
+  const areaSegundoProfissional = document.getElementById('areaSegundoProfissional');
+  const avisoSegundo = document.getElementById('avisoSegundo');
+  let dadosVisitaCompartilhada = null;
+
   formAgendar.addEventListener('submit', async function (e) {
     e.preventDefault();
     const btn = document.getElementById('btnAgendar');
     btn.disabled = true;
     btn.textContent = 'Salvando...';
     aviso.className = 'aviso';
+    areaSegundoProfissional.classList.add('oculto');
+
+    const dataConsultaValor = document.getElementById('dataConsulta').value;
+    const profissionalValor = document.getElementById('profissional').value;
+    const tipoValor = document.getElementById('tipoAtendimento').value;
 
     try {
       const resposta = await fetch(API_URL, {
@@ -366,9 +390,9 @@
           apiKey: API_KEY,
           dados: {
             idCrianca: criancaAtual.idCrianca,
-            dataAtendimento: document.getElementById('dataConsulta').value,
-            profissional: document.getElementById('profissional').value,
-            tipoAtendimento: document.getElementById('tipoAtendimento').value,
+            dataAtendimento: dataConsultaValor,
+            profissional: profissionalValor,
+            tipoAtendimento: tipoValor,
           }
         })
       });
@@ -377,6 +401,14 @@
       if (resultado.ok) {
         aviso.className = 'aviso sucesso';
         aviso.textContent = 'Consulta agendada! ID: ' + resultado.atendimento.idAtendimento;
+
+        if (tipoValor === 'Visita Domiciliar Compartilhada') {
+          dadosVisitaCompartilhada = { dataAtendimento: dataConsultaValor, primeiroProfissional: profissionalValor };
+          const segundoSelect = document.getElementById('segundoProfissional');
+          segundoSelect.value = profissionalValor === 'Enfermeira' ? 'Medica' : 'Enfermeira';
+          avisoSegundo.className = 'aviso';
+          areaSegundoProfissional.classList.remove('oculto');
+        }
       } else {
         aviso.className = 'aviso erro';
         aviso.textContent = 'Erro: ' + resultado.erro;
@@ -387,6 +419,48 @@
     } finally {
       btn.disabled = false;
       btn.textContent = 'Confirmar agendamento';
+    }
+  });
+
+  document.getElementById('btnAdicionarSegundo').addEventListener('click', async function () {
+    if (!dadosVisitaCompartilhada) return;
+    const btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Salvando...';
+    avisoSegundo.className = 'aviso';
+
+    try {
+      const resposta = await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'agendarConsulta',
+          apiKey: API_KEY,
+          dados: {
+            idCrianca: criancaAtual.idCrianca,
+            dataAtendimento: dadosVisitaCompartilhada.dataAtendimento,
+            profissional: document.getElementById('segundoProfissional').value,
+            tipoAtendimento: 'Visita Domiciliar Compartilhada',
+          }
+        })
+      });
+      const resultado = await resposta.json();
+
+      if (resultado.ok) {
+        avisoSegundo.className = 'aviso sucesso';
+        avisoSegundo.textContent = 'Segundo profissional adicionado! ID: ' + resultado.atendimento.idAtendimento;
+        btn.disabled = true;
+        btn.textContent = 'Já adicionado';
+      } else {
+        avisoSegundo.className = 'aviso erro';
+        avisoSegundo.textContent = 'Erro: ' + resultado.erro;
+        btn.disabled = false;
+        btn.textContent = '+ Adicionar segundo profissional';
+      }
+    } catch (err) {
+      avisoSegundo.className = 'aviso erro';
+      avisoSegundo.textContent = 'Falha de conexão: ' + err.message;
+      btn.disabled = false;
+      btn.textContent = '+ Adicionar segundo profissional';
     }
   });
 
