@@ -146,6 +146,31 @@
   .aviso.erro{ display:block; background:#FBEAEA; color:var(--alerta); border:1px solid #F1C6C6; }
   footer{ text-align:center; font-size:12px; color:#7C97A2; padding-bottom:20px; }
   .oculto{ display:none; }
+
+  nav.menu-app{
+    display:flex;
+    gap:6px;
+    overflow-x:auto;
+    padding:10px 16px;
+    background:#fff;
+    border-bottom:1px solid #E3ECEF;
+    -webkit-overflow-scrolling:touch;
+  }
+  nav.menu-app a{
+    flex:0 0 auto;
+    padding:8px 14px;
+    border-radius:20px;
+    font-size:12.5px;
+    font-weight:600;
+    text-decoration:none;
+    color:#5F7A85;
+    background:#F1F5F6;
+    white-space:nowrap;
+  }
+  nav.menu-app a.ativo{
+    background:#1B6E8C;
+    color:#fff;
+  }
 </style>
 </head>
 <body>
@@ -154,6 +179,14 @@
   <h1>Puericultura</h1>
   <p>ESF Flor do Cerrado - Agendamento</p>
 </header>
+<nav class="menu-app">
+  <a href="cadastro.html" data-pagina="cadastro">Cadastro</a>
+  <a href="agendamento.html" data-pagina="agendamento">Agendamento</a>
+  <a href="atendimento.html" data-pagina="atendimento">Atendimento</a>
+  <a href="registro.html" data-pagina="registro">Vacinas/Visitas</a>
+  <a href="relatorios.html" data-pagina="relatorios">Relatórios</a>
+</nav>
+
 
 <main>
 
@@ -199,6 +232,13 @@
 <footer>antonioresolve.com.br</footer>
 
 <script>
+  (function marcarPaginaAtiva() {
+    var pagina = window.location.pathname.split('/').pop().replace('.html', '') || 'cadastro';
+    document.querySelectorAll('nav.menu-app a').forEach(function (a) {
+      if (a.getAttribute('data-pagina') === pagina) a.classList.add('ativo');
+    });
+  })();
+
   const API_URL = "https://script.google.com/macros/s/AKfycbz9G6wxwGqE4KGuZnVRJSXitb9st3sHh0OlY5JjRL4D-pHzTiy5oG7phukqqBRaDK98UQ/exec";
   const API_KEY = "FC_PUERI2026";
 
